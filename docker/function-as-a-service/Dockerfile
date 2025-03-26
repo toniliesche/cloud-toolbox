@@ -1,0 +1,46 @@
+# MIT License
+# Copyright (c) 2025 Toni Liesche
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+ARG DEBIANVER=bookworm
+ARG GOLANGVER=1.24
+FROM golang:${GOLANGVER}-${DEBIANVER} AS builder
+
+ARG CACHEBUST
+RUN echo ${CACHEBUST} && \
+    git clone https://github.com/toniliesche/cloud-toolbox.git /tmp/cloud-toolbox
+
+WORKDIR /tmp/cloud-toolbox
+
+ARG BUILDVER
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    git checkout ${BUILDVER} && \
+    make build-function-as-a-service
+
+FROM debian:${DEBIANVER}-slim
+
+ARG BUILDVER
+ARG COMMIT
+LABEL org.opencontainers.image.authors="Toni Liesche <dev@toniliesche.de>"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/tliesche/function-as-a-service"
+LABEL org.opencontainers.image.documentation="https://raw.githubusercontent.com/toniliesche/cloud-toolbox/refs/heads/develop/README.md"
+LABEL org.opencontainers.image.source="https://github.com/toniliesche/cloud-toolbox"
+LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.title="Function as a service container"
+LABEL org.opencontainers.image.description="HTTP triggered function as a service container"
+ENV HTTP_SERVER_HOST=0.0.0.0
+
+COPY --from=builder /tmp/cloud-toolbox/build/faas /usr/local/bin/faas
+
+CMD [ "/usr/local/bin/faas" ]

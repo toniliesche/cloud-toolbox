@@ -1,0 +1,145 @@
+// MIT License
+// Copyright (c) 2025 Toni Liesche
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+package config
+
+import (
+	"cloud-toolbox/internal/domain/errors"
+	"fmt"
+	"gopkg.in/yaml.v3"
+	"os"
+)
+
+type FunctionAsAServiceConfig struct {
+	ApplicationConfig
+	HttpServer        *HttpServerConfig `yaml:"http"`
+	Command           string            `yaml:"command"`
+	ParallelExecution int64             `yaml:"parallel_execution"`
+	ExecutionTimeout  int64             `yaml:"execution_timeout"`
+}
+
+func (c *FunctionAsAServiceConfig) Validate() error {
+	if c.SystemConfig == nil {
+		return errors.NewMissingConfigSectionError("system")
+	}
+
+	if err := c.SystemConfig.Validate("system"); err != nil {
+		return errors.NewValidateConfigSectionError("system", err)
+	}
+
+	if c.HttpServer == nil {
+		return errors.NewMissingConfigSectionError("http")
+	}
+
+	if err := c.HttpServer.Validate("html"); err != nil {
+		return errors.NewValidateConfigSectionError("http", err)
+	}
+
+	if c.Command == "" {
+		return errors.NewMissingConfigValueError("command")
+	}
+
+	if c.ParallelExecution < 1 {
+		return errors.NewConfigValueNeedsToBeGreaterZeroError("parallel_execution")
+	}
+
+	if c.ExecutionTimeout < 10 {
+		return errors.NewConfigValueNeedsToBeGreaterThanOrEqualValueError("execution_timeout", 10)
+	}
+
+	if c.ExecutionTimeout > 900 {
+		return errors.NewConfigValueNeedsToBeLessThanOrEqualValueError("execution_timeout", 900)
+	}
+
+	return nil
+}
+
+func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, error) {
+	configFile := GetEnvironmentString("FUNCTION_AS_A_SERVICE_CONFIG_FILE", "")
+
+	var cfg *FunctionAsAServiceConfig
+	var err error
+
+	if configFile != "" {
+		cfg, err = getFunctionAsAServiceConfigFromFile(configFile)
+	} else {
+		cfg, err = getFunctionAsAServiceConfigFromEnvironment()
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed creating application config: %s", err.Error())
+	}
+
+	if err = cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("failed validating application config: %s", err.Error())
+	}
+
+	return cfg, nil
+}
+
+func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
+	return &FunctionAsAServiceConfig{
+		HttpServer: getDefaultHttpServerConfig(),
+	}
+}
+
+func getFunctionAsAServiceConfigFromFile(file string) (*FunctionAsAServiceConfig, error) {
+	fileContents, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := getDefaultFunctionAsAServiceConfig()
+	if err = yaml.Unmarshal(fileContents, cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, error) {
+	command := GetEnvironmentString("FUNCTION_AS_A_SERVICE_COMMAND", "")
+	if command == "" {
+		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_COMMAND")
+	}
+
+	parallelExecution, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION", 10)
+	if err != nil {
+		return nil, err
+	}
+
+	executionTimeout, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT", 30)
+	if err != nil {
+		return nil, err
+	}
+
+	httpConfig, err := getHttpServerConfigFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
+	SystemConfig, err := getSystemConfigFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
+	return &FunctionAsAServiceConfig{
+		ApplicationConfig: ApplicationConfig{
+			SystemConfig: SystemConfig,
+		},
+		HttpServer:        httpConfig,
+		Command:           command,
+		ParallelExecution: parallelExecution,
+		ExecutionTimeout:  executionTimeout,
+	}, nil
+}

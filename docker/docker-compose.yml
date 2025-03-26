@@ -1,0 +1,26 @@
+# MIT License
+# Copyright (c) 2025 Toni Liesche
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+services:
+  faas:
+    image: tliesche/function-as-a-service:develop
+    ports:
+      - "8080:8080"
+    environment:
+      - CLOUD_TOOLBOX_COMPONENT_ID=hello-world-faas
+      - FUNCTION_AS_A_SERVICE_COMMAND=/usr/bin/sleep 5
+      - FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION=2
+      - FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT=10
+      - LOG_DEV_MODE=true
+      - LOG_LEVEL=trace
+      - LOG_PATH=/dev/stdout
