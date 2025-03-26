@@ -51,12 +51,8 @@ func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfa
 		"status": status,
 	}
 
-	if status == "finished" {
-		output := f.registry.GetOutput(executionId)
-		if output == "" {
-			return models.NewFaasErrorResponse(executionId, "error", httpmodels.NewInternalServerError(fmt.Errorf("could not find output for execution `%s`", executionId)))
-		}
-
+	output := f.registry.GetOutput(executionId)
+	if output != "" {
 		data["output"] = output
 	}
 
@@ -231,16 +227,14 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 		var httpStatus int
 		status := functionExecution.GetStatus()
 
-		var err error
-		var output string
+		err := f.registry.GetError(executionId)
+		output := f.registry.GetOutput(executionId)
 		if status == "success" {
 			f.logger.Debug().
 				Str("execution-id", executionId).
 				Msgf("[%s] Function execution has been successful", FunctionAsAServiceLogIdentifier)
 
 			httpStatus = http.StatusOK
-			output, _ = functionExecution.GetOutput()
-			err = nil
 		} else {
 			f.logger.Debug().
 				Str("execution-id", executionId).
@@ -248,8 +242,6 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 				Msgf("[%s] Function execution has failed", FunctionAsAServiceLogIdentifier)
 
 			httpStatus = http.StatusInternalServerError
-			output, _ = functionExecution.GetOutput()
-			err = functionExecution.GetError()
 		}
 
 		if err != nil {

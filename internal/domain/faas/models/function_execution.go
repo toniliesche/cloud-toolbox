@@ -14,6 +14,8 @@
 package models
 
 import (
+	"bufio"
+	"bytes"
 	faaserrors "cloud-toolbox/internal/domain/faas/errors"
 	"cloud-toolbox/internal/domain/faas/interfaces"
 	"context"
@@ -21,7 +23,9 @@ import (
 	"fmt"
 	"github.com/rs/zerolog"
 	"mvdan.cc/sh/v3/shell"
+	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -45,13 +49,16 @@ type FunctionExecution struct {
 	err        error
 	cancel     context.CancelFunc
 	ctx        context.Context
-	output     []byte
+	out        *bytes.Buffer
+	logs       *bytes.Buffer
 	body       string
 	exitCode   syscall.WaitStatus
 	wait       sync.WaitGroup
 	failedInfo string
 	logger     *zerolog.Logger
 	listeners  []interfaces.UpdateListener
+	logReader  *os.File
+	logWriter  *os.File
 }
 
 func (e *FunctionExecution) updateStatus(status int) {
@@ -191,7 +198,7 @@ func (e *FunctionExecution) GetOutput() (string, error) {
 	e.logger.Trace().
 		Msgf("[%s] Returning function execution output", FunctionExecutionLogIdentifier)
 
-	return string(e.output), nil
+	return e.out.String(), nil
 }
 
 func (e *FunctionExecution) GetError() error {
@@ -206,10 +213,28 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 	go func() {
 		defer e.wait.Done()
 		defer e.cancel()
+		defer e.logWriter.Close()
 		defer func() { <-*sync }()
 
 		e.logger.Trace().
 			Msgf("[%s] Starting function execution in go routine", FunctionExecutionLogIdentifier)
+
+		e.cmd.Stdout = e.out
+		e.cmd.Stderr = e.logWriter
+
+		go func() {
+			scanner := bufio.NewScanner(e.logReader)
+			for scanner.Scan() {
+				text := strings.TrimSpace(scanner.Text())
+
+				if text == "" {
+					continue
+				}
+
+				e.logger.Trace().
+					Msgf("[%s] Function execution log: %s", FunctionExecutionLogIdentifier, scanner.Text())
+			}
+		}()
 
 		stdin, err := e.cmd.StdinPipe()
 		if err != nil {
@@ -245,7 +270,8 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 		}
 
 		e.updateStatus(StatusRunning)
-		e.output, e.err = e.cmd.CombinedOutput()
+
+		e.err = e.cmd.Run()
 
 		if e.err != nil {
 			e.logger.Trace().
@@ -303,10 +329,15 @@ func NewFunctionExecution(
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 
+	logReader, logWriter, _ := os.Pipe()
+
 	return &FunctionExecution{
 		id:        id,
 		logger:    &executionLogger,
 		cmd:       cmd,
+		out:       &bytes.Buffer{},
+		logReader: logReader,
+		logWriter: logWriter,
 		ctx:       ctx,
 		cancel:    cancel,
 		body:      body,

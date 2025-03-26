@@ -23,7 +23,8 @@ WORKDIR /tmp/cloud-toolbox
 ARG BUILDVER
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    make build-function-as-a-service
+    make build-function-as-a-service && \
+    make build-hello-world-faas
 
 FROM debian:${DEBIANVER}-slim
 
@@ -40,5 +41,6 @@ LABEL org.opencontainers.image.description="HTTP triggered function as a service
 ENV HTTP_SERVER_HOST=0.0.0.0
 
 COPY --from=builder /tmp/cloud-toolbox/build/function-as-a-service /usr/local/bin/function-as-a-service
+COPY --from=builder /tmp/cloud-toolbox/build/hello-world-faas /usr/local/bin/hello-world-faas
 
 CMD [ "/usr/local/bin/function-as-a-service" ]
