@@ -98,8 +98,10 @@ func (e *FunctionExecution) Run(sync *chan uint) error {
 		e.logger.Trace().
 			Msgf("[%s] Function execution has been rejected", FunctionExecutionLogIdentifier)
 
+		e.err = faaserrors.NewLimitExceededError()
 		e.updateStatus(StatusRejected)
-		return faaserrors.NewLimitExceededError()
+
+		return e.err
 	}
 }
 

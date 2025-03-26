@@ -57,7 +57,11 @@ func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfa
 	}
 
 	if status == "failed" || status == "timeout" || status == "rejected" {
-		data["error"] = f.registry.GetError(executionId).Error()
+		err := f.registry.GetError(executionId)
+
+		if err != nil {
+			data["error"] = err.Error()
+		}
 	}
 
 	return &models.FaasResponse{
@@ -78,7 +82,7 @@ func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Respons
 		Str("execution-id", executionId).
 		Msgf("[%s] Trying to unmarshal payload to FaasRequestSource", FunctionAsAServiceLogIdentifier)
 	if err := json.Unmarshal(payload, base); err != nil {
-		f.logger.Trace().
+		f.logger.Warn().
 			Err(err).
 			Msgf("[%s] Failed to unmarshal payload to FaasRequestSource", FunctionAsAServiceLogIdentifier)
 
@@ -89,7 +93,7 @@ func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Respons
 		Str("execution-id", executionId).
 		Msgf("[%s] Trying to validate FaasRequestSource payload", FunctionAsAServiceLogIdentifier)
 	if err := base.Validate(); err != nil {
-		f.logger.Trace().
+		f.logger.Warn().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to validate FaasRequestSource payload", FunctionAsAServiceLogIdentifier)
@@ -121,7 +125,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 
 	request := &models.FaasRequest[*models.RabbitMQRecord]{}
 	if err := json.Unmarshal(payload, request); err != nil {
-		f.logger.Trace().
+		f.logger.Warn().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to unmarshal payload to FaasRequest", FunctionAsAServiceLogIdentifier)
@@ -134,7 +138,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 		Msgf("[%s] Trying to validate FaasRequest", FunctionAsAServiceLogIdentifier)
 
 	if err := request.Validate(); err != nil {
-		f.logger.Trace().
+		f.logger.Warn().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to validate FaasRequest", FunctionAsAServiceLogIdentifier)
@@ -152,7 +156,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 
 	recordsJson, err := json.Marshal(request.Records)
 	if err != nil {
-		f.logger.Trace().
+		f.logger.Warn().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to marshal records to JSON", FunctionAsAServiceLogIdentifier)
@@ -166,7 +170,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 
 	functionExecution, err := faasmodels.NewFunctionExecution(executionId, f.cfg.Command, f.cfg.ExecutionTimeout, string(recordsJson), f.logger)
 	if err != nil {
-		f.logger.Trace().
+		f.logger.Error().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to create function execution", FunctionAsAServiceLogIdentifier)
@@ -177,7 +181,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 	convertedRequest := request.ToAbstractRequest()
 	err = f.registry.AddRecord(functionExecution, &convertedRequest)
 	if err != nil {
-		f.logger.Trace().
+		f.logger.Error().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to add function execution to registry", FunctionAsAServiceLogIdentifier)
@@ -191,7 +195,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 
 	err = functionExecution.Run(&f.limiter)
 	if err != nil {
-		f.logger.Trace().
+		f.logger.Error().
 			Err(err).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to run function execution", FunctionAsAServiceLogIdentifier)
