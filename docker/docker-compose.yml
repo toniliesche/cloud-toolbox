@@ -12,16 +12,6 @@
 # copies or substantial portions of the Software.
 
 services:
-  scylla:
-    image: scylladb/scylla
-    hostname: scylla
-    ports:
-      - "9042:9042"
-      - "8000:8000"
-    command: ["--alternator-address", "0.0.0.0", "--alternator-port", "8000", "--alternator-write-isolation", "always"]
-    volumes:
-      - scylla_data:/var/lib/scylla
-
   faas:
     image: tliesche/function-as-a-service:develop
     hostname: faas
@@ -36,6 +26,26 @@ services:
       - LOG_LEVEL=trace
       - LOG_PATH=/dev/stdout
 
+  redis:
+    image: redis:8.0-M04-alpine
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  scylla:
+    image: scylladb/scylla
+    hostname: scylla
+    ports:
+      - "9042:9042"
+      - "8000:8000"
+    command: ["--alternator-address", "0.0.0.0", "--alternator-port", "8000", "--alternator-write-isolation", "always"]
+    volumes:
+      - scylla_data:/var/lib/scylla
+
 volumes:
+  redis_data:
+    driver: local
   scylla_data:
     driver: local
