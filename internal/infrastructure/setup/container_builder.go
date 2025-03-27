@@ -16,10 +16,10 @@ package setup
 import (
 	"cloud-toolbox/internal/application/faas"
 	"cloud-toolbox/internal/application/faas/services"
-	"cloud-toolbox/internal/domain/errors"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/config/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
 	"cloud-toolbox/internal/infrastructure/log"
 	"fmt"
@@ -42,7 +42,7 @@ func (b *ContainerBuilder) SetFaasConfig(cfg *config.FunctionAsAServiceConfig) *
 	return b
 }
 
-func (b *ContainerBuilder) Build() (*di.Container, error) {
+func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 	b.logger = log.NewTempLogger()
 	b.logger.Info().
 		Msgf("[%s] Starting container setup", ContainerBuilderLogIdentifier)
@@ -84,7 +84,7 @@ func (b *ContainerBuilder) Build() (*di.Container, error) {
 	return container, nil
 }
 
-func (b *ContainerBuilder) logError(err error) error {
+func (b *ContainerBuilder) logError(err errors.ApplicationError) errors.ApplicationError {
 	b.logger.Error().
 		Err(err).
 		Msgf("[%s] Error during container setup", ContainerBuilderLogIdentifier)
@@ -92,13 +92,13 @@ func (b *ContainerBuilder) logError(err error) error {
 	return err
 }
 
-func (b *ContainerBuilder) setupBasics(container *di.Container) error {
+func (b *ContainerBuilder) setupBasics(container *di.Container) errors.ApplicationError {
 
 	return nil
 }
 
-func (b *ContainerBuilder) setupFaas(container *di.Container) error {
-	var err error
+func (b *ContainerBuilder) setupFaas(container *di.Container) errors.ApplicationError {
+	var err errors.ApplicationError
 
 	if b.faasConfig == nil {
 		return errors.NewResolveDependencyError("Function as a Service", "faasConfig")
@@ -147,12 +147,12 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) error {
 	return nil
 }
 
-func (b *ContainerBuilder) getApplicationConfig() (interfaces.ApplicationConfig, error) {
+func (b *ContainerBuilder) getApplicationConfig() (interfaces.ApplicationConfig, errors.ApplicationError) {
 	switch b.application {
 	case "faas":
 		return b.faasConfig, nil
 	default:
-		return nil, fmt.Errorf("no application config provided")
+		return nil, errors.NewContainerConfigMissingError()
 	}
 }
 
@@ -165,8 +165,8 @@ func (b *ContainerBuilder) getComponentType() string {
 	}
 }
 
-func (b *ContainerBuilder) setupLogger(container *di.Container) error {
-	var err error
+func (b *ContainerBuilder) setupLogger(container *di.Container) errors.ApplicationError {
+	var err errors.ApplicationError
 
 	applicationConfig, err := b.getApplicationConfig()
 	if err != nil {

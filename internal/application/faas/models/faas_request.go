@@ -15,7 +15,7 @@ package models
 
 import (
 	faasinterfaces "cloud-toolbox/internal/application/faas/models/interfaces"
-	"cloud-toolbox/internal/domain/errors"
+	"cloud-toolbox/internal/infrastructure/errors"
 )
 
 type FaasRequest[K faasinterfaces.FaasRecord] struct {
@@ -24,7 +24,7 @@ type FaasRequest[K faasinterfaces.FaasRecord] struct {
 	Records []K  `json:"records"`
 }
 
-func (r *FaasRequest[K]) Validate() error {
+func (r *FaasRequest[K]) Validate() errors.ApplicationError {
 	if r.Records == nil {
 		return errors.NewMissingRequestFieldError("records")
 	}
@@ -64,7 +64,7 @@ type FaasRequestSource struct {
 	Source string `json:"source"`
 }
 
-func (s FaasRequestSource) Validate() error {
+func (s FaasRequestSource) Validate() errors.ApplicationError {
 	if s.Source == "" {
 		return errors.NewMissingRequestFieldError("source")
 	}

@@ -13,45 +13,16 @@
 
 package errors
 
-import "net/http"
-
-type HttpError struct {
-	Err    error
-	Status int
-}
-
-func (h HttpError) Error() string {
-	return h.Err.Error()
-}
-
-func (h HttpError) GetStatusCode() int {
-	return h.Status
-}
-
-func NewBadRequestError(err error) error {
-	return HttpError{
-		Err:    err,
-		Status: http.StatusBadRequest,
+func NewMissingRoutesError() ApplicationError {
+	return InfrastructureError{
+		message: "HttpHandler did not provide any routes",
+		code:    ErrorCodeServerNoRoutes,
 	}
 }
 
-func NewTooManyRequestsError(err error) error {
-	return HttpError{
-		Err:    err,
-		Status: http.StatusTooManyRequests,
-	}
-}
-
-func NewInternalServerError(err error) error {
-	return HttpError{
-		Err:    err,
-		Status: http.StatusInternalServerError,
-	}
-}
-
-func NewNotFoundError(err error) error {
-	return HttpError{
-		Err:    err,
-		Status: http.StatusNotFound,
+func NewRouteRegisterError(err error) ApplicationError {
+	return InfrastructureError{
+		message: err.Error(),
+		code:    ErrorCodeServerRouteFailed,
 	}
 }

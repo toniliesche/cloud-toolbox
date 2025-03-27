@@ -18,16 +18,17 @@ import (
 	"cloud-toolbox/internal/application/faas/models/interfaces"
 	faasmodels "cloud-toolbox/internal/domain/faas/models"
 	"cloud-toolbox/internal/infrastructure/di"
+	"cloud-toolbox/internal/infrastructure/errors"
 )
 
 type FunctionRegistry struct {
 	executions map[string]*models.ExecutionRecord
 	statuses   map[string]string
 	outputs    map[string]string
-	errors     map[string]error
+	errors     map[string]errors.ApplicationError
 }
 
-func (f *FunctionRegistry) AddRecord(function *faasmodels.FunctionExecution, request *models.FaasRequest[interfaces.FaasRecord]) error {
+func (f *FunctionRegistry) AddRecord(function *faasmodels.FunctionExecution, request *models.FaasRequest[interfaces.FaasRecord]) errors.ApplicationError {
 	record := models.NewExecutionRecord(
 		function.GetId(),
 		request,
@@ -57,7 +58,7 @@ func (f *FunctionRegistry) GetOutput(executionId string) string {
 	return f.outputs[executionId]
 }
 
-func (f *FunctionRegistry) GetError(executionId string) error {
+func (f *FunctionRegistry) GetError(executionId string) errors.ApplicationError {
 	return f.errors[executionId]
 }
 
@@ -75,11 +76,11 @@ func (f *FunctionRegistry) Notify(executionId string, status int) {
 	}
 }
 
-func NewFunctionRegistry(container *di.Container) (*FunctionRegistry, error) {
+func NewFunctionRegistry(container *di.Container) (*FunctionRegistry, errors.ApplicationError) {
 	return &FunctionRegistry{
 		executions: make(map[string]*models.ExecutionRecord),
 		statuses:   make(map[string]string),
 		outputs:    make(map[string]string),
-		errors:     make(map[string]error),
+		errors:     make(map[string]errors.ApplicationError),
 	}, nil
 }

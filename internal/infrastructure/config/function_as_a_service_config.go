@@ -14,8 +14,7 @@
 package config
 
 import (
-	"cloud-toolbox/internal/domain/errors"
-	"fmt"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -28,7 +27,7 @@ type FunctionAsAServiceConfig struct {
 	ExecutionTimeout  int64             `yaml:"execution_timeout"`
 }
 
-func (c *FunctionAsAServiceConfig) Validate() error {
+func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 	if c.SystemConfig == nil {
 		return errors.NewMissingConfigSectionError("system")
 	}
@@ -64,11 +63,11 @@ func (c *FunctionAsAServiceConfig) Validate() error {
 	return nil
 }
 
-func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, error) {
+func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, errors.ApplicationError) {
 	configFile := GetEnvironmentString("FUNCTION_AS_A_SERVICE_CONFIG_FILE", "")
 
 	var cfg *FunctionAsAServiceConfig
-	var err error
+	var err errors.ApplicationError
 
 	if configFile != "" {
 		cfg, err = getFunctionAsAServiceConfigFromFile(configFile)
@@ -77,11 +76,11 @@ func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed creating application config: %s", err.Error())
+		return nil, errors.NewConfigCreationError(err)
 	}
 
 	if err = cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("failed validating application config: %s", err.Error())
+		return nil, errors.NewConfigValidationError(err)
 	}
 
 	return cfg, nil
@@ -93,21 +92,21 @@ func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
 	}
 }
 
-func getFunctionAsAServiceConfigFromFile(file string) (*FunctionAsAServiceConfig, error) {
+func getFunctionAsAServiceConfigFromFile(file string) (*FunctionAsAServiceConfig, errors.ApplicationError) {
 	fileContents, err := os.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewConfigFileReadingError(err)
 	}
 
 	cfg := getDefaultFunctionAsAServiceConfig()
 	if err = yaml.Unmarshal(fileContents, cfg); err != nil {
-		return nil, err
+		return nil, errors.NewConfigFileParsingError(err)
 	}
 
 	return cfg, nil
 }
 
-func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, error) {
+func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, errors.ApplicationError) {
 	command := GetEnvironmentString("FUNCTION_AS_A_SERVICE_COMMAND", "")
 	if command == "" {
 		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_COMMAND")

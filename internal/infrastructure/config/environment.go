@@ -14,7 +14,7 @@
 package config
 
 import (
-	"cloud-toolbox/internal/domain/errors"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"os"
 	"strconv"
 )
@@ -27,7 +27,7 @@ func GetEnvironmentString(key string, defaultValue string) string {
 	return value
 }
 
-func GetEnvironmentInt(key string, defaultValue int64) (int64, error) {
+func GetEnvironmentInt(key string, defaultValue int64) (int64, errors.ApplicationError) {
 	value := os.Getenv(key)
 	if value == "" {
 		return defaultValue, nil
@@ -41,7 +41,7 @@ func GetEnvironmentInt(key string, defaultValue int64) (int64, error) {
 	return intValue, nil
 }
 
-func GetEnvironmentBool(key string, defaultValue bool) (bool, error) {
+func GetEnvironmentBool(key string, defaultValue bool) (bool, errors.ApplicationError) {
 	value := os.Getenv(key)
 	if value == "" {
 		return defaultValue, nil

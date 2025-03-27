@@ -14,7 +14,7 @@
 package config
 
 import (
-	"cloud-toolbox/internal/domain/errors"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
 )
 
@@ -28,7 +28,7 @@ type HttpServerConfig struct {
 	Port int64  `yaml:"port"`
 }
 
-func (c *HttpServerConfig) Validate(path string) error {
+func (c *HttpServerConfig) Validate(path string) errors.ApplicationError {
 	if c.Host == "" {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.host", path))
 	}
@@ -51,7 +51,7 @@ func getDefaultHttpServerConfig() *HttpServerConfig {
 	}
 }
 
-func getHttpServerConfigFromEnvironment() (*HttpServerConfig, error) {
+func getHttpServerConfigFromEnvironment() (*HttpServerConfig, errors.ApplicationError) {
 	cfg := getDefaultHttpServerConfig()
 
 	host := GetEnvironmentString("HTTP_SERVER_HOST", "")

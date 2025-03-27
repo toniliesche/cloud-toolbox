@@ -14,8 +14,8 @@
 package log
 
 import (
-	"cloud-toolbox/internal/domain/errors"
 	"cloud-toolbox/internal/infrastructure/di"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
 	"github.com/rs/zerolog"
 	"io"
@@ -30,7 +30,7 @@ func NewTempLogger() *zerolog.Logger {
 	return &logger
 }
 
-func NewLogger(container *di.Container) (*zerolog.Logger, error) {
+func NewLogger(container *di.Container) (*zerolog.Logger, errors.ApplicationError) {
 	if container == nil {
 		return nil, errors.NewContainerMissingError("Logger")
 	}
@@ -39,7 +39,7 @@ func NewLogger(container *di.Container) (*zerolog.Logger, error) {
 		return nil, errors.NewResolveDependencyError("Logger", "SystemConfig")
 	}
 
-	var err error
+	var err errors.ApplicationError
 	if err = container.SystemConfig.Validate("log"); err != nil {
 		return nil, errors.NewInvalidConfigError("Logger", err)
 	}
@@ -67,8 +67,9 @@ func NewLogger(container *di.Container) (*zerolog.Logger, error) {
 			logFile = logConfig.Path
 		}
 
-		writer, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
+		var fileErr error
+		writer, fileErr = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if fileErr != nil {
 			return nil, errors.NewFileAccessError(logFile, err)
 		}
 		zerolog.TimeFieldFormat = "2006-01-02 15:04:05.000"
@@ -98,7 +99,7 @@ func NewLogger(container *di.Container) (*zerolog.Logger, error) {
 	return &logger, nil
 }
 
-func resolveLogLevel(level string) (zerolog.Level, error) {
+func resolveLogLevel(level string) (zerolog.Level, errors.ApplicationError) {
 	switch level {
 	case "trace":
 		return zerolog.TraceLevel, nil

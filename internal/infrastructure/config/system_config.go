@@ -14,7 +14,7 @@
 package config
 
 import (
-	"cloud-toolbox/internal/domain/errors"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
 )
 
@@ -24,7 +24,7 @@ type SystemConfig struct {
 	ComponentId   string
 }
 
-func (c *SystemConfig) Validate(path string) error {
+func (c *SystemConfig) Validate(path string) errors.ApplicationError {
 	if c.Log == nil {
 		return errors.NewMissingConfigSectionError(fmt.Sprintf("%s.log", path))
 	}
@@ -36,7 +36,7 @@ func (c *SystemConfig) Validate(path string) error {
 	return nil
 }
 
-func getSystemConfigFromEnvironment() (*SystemConfig, error) {
+func getSystemConfigFromEnvironment() (*SystemConfig, errors.ApplicationError) {
 	logConfig, err := getLogConfigFromEnvironment()
 	if err != nil {
 		return nil, err

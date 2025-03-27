@@ -13,30 +13,9 @@
 
 package errors
 
-import "fmt"
-
-type InvalidPayloadError struct {
-	message string
-}
-
-func (e InvalidPayloadError) Error() string {
-	return e.message
-}
-
-func NewMissingPayloadFieldError(field string) error {
-	return InvalidPayloadError{
-		message: fmt.Sprintf("Request payload is missing required field: `%s`", field),
-	}
-}
-
-func NewUnknownPayloadTypeError(payloadType string) error {
-	return InvalidPayloadError{
-		message: fmt.Sprintf("Unknown payload type: `%s`", payloadType),
-	}
-}
-
-func NewPayloadParsingError(err error) error {
-	return InvalidPayloadError{
-		message: fmt.Sprintf("Error parsing request payload: %v", err),
+func NewFileAccessError(path string, err ApplicationError) ApplicationError {
+	return InfrastructureError{
+		message: "Error accessing file " + path + ": " + err.Error(),
+		code:    ErrorCodeSystemFileSystemAccess,
 	}
 }

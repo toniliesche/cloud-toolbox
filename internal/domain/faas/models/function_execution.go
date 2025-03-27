@@ -16,8 +16,9 @@ package models
 import (
 	"bufio"
 	"bytes"
-	faaserrors "cloud-toolbox/internal/domain/faas/errors"
+	faaserrors "cloud-toolbox/internal/application/faas/errors"
 	"cloud-toolbox/internal/domain/faas/interfaces"
+	infrastructureerrors "cloud-toolbox/internal/infrastructure/errors"
 	"context"
 	"errors"
 	"fmt"
@@ -46,7 +47,7 @@ type FunctionExecution struct {
 	id         string
 	cmd        *exec.Cmd
 	status     int
-	err        error
+	err        infrastructureerrors.ApplicationError
 	cancel     context.CancelFunc
 	ctx        context.Context
 	out        *bytes.Buffer
@@ -77,7 +78,7 @@ func (e *FunctionExecution) AddListener(listener interfaces.UpdateListener) {
 	e.listeners = append(e.listeners, listener)
 }
 
-func (e *FunctionExecution) Run(sync *chan uint) error {
+func (e *FunctionExecution) Run(sync *chan uint) infrastructureerrors.ApplicationError {
 	e.logger.Trace().
 		Msgf("[%s] Trying to execute function: %s", FunctionExecutionLogIdentifier, e.cmd)
 
@@ -119,7 +120,7 @@ func (e *FunctionExecution) IsFinished() bool {
 	return e.status == StatusRejected || e.status == StatusStartingFailed || e.status > StatusRunning
 }
 
-func (e *FunctionExecution) Terminate() error {
+func (e *FunctionExecution) Terminate() infrastructureerrors.ApplicationError {
 	e.logger.Trace().
 		Msgf("[%s] Trying to terminate function execution", FunctionExecutionLogIdentifier)
 
@@ -140,7 +141,12 @@ func (e *FunctionExecution) Terminate() error {
 	e.logger.Trace().
 		Msgf("[%s] Terminating function execution", FunctionExecutionLogIdentifier)
 
-	return e.cmd.Process.Kill()
+	err := e.cmd.Process.Kill()
+	if err != nil {
+		return faaserrors.NewFaasCommandCouldNotBeKilledError(e.cmd.Process.Kill())
+	}
+
+	return nil
 }
 
 func (e *FunctionExecution) GetStatus() string {
@@ -186,7 +192,7 @@ func (e *FunctionExecution) GetStatus() string {
 	}
 }
 
-func (e *FunctionExecution) GetOutput() (string, error) {
+func (e *FunctionExecution) GetOutput() (string, infrastructureerrors.ApplicationError) {
 	e.logger.Trace().
 		Msgf("[%s] Trying to get function execution output", FunctionExecutionLogIdentifier)
 
@@ -203,11 +209,11 @@ func (e *FunctionExecution) GetOutput() (string, error) {
 	return e.out.String(), nil
 }
 
-func (e *FunctionExecution) GetError() error {
+func (e *FunctionExecution) GetError() infrastructureerrors.ApplicationError {
 	return e.err
 }
 
-func (e *FunctionExecution) launch(sync *chan uint) error {
+func (e *FunctionExecution) launch(sync *chan uint) infrastructureerrors.ApplicationError {
 	e.logger.Trace().
 		Msgf("[%s] Launching function execution", FunctionExecutionLogIdentifier)
 
@@ -244,7 +250,7 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 				Err(err).
 				Msgf("[%s] Error creating stdin pipe", FunctionExecutionLogIdentifier)
 
-			e.err = err
+			e.err = faaserrors.NewExecutionFailedError(err)
 			e.updateStatus(StatusStartingFailed)
 			return
 		}
@@ -255,7 +261,7 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 				Err(err).
 				Msgf("[%s] Error writing to stdin", FunctionExecutionLogIdentifier)
 
-			e.err = err
+			e.err = faaserrors.NewExecutionFailedError(err)
 			e.updateStatus(StatusStartingFailed)
 			return
 		}
@@ -266,14 +272,17 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 				Err(err).
 				Msgf("[%s] Error closing stdin", FunctionExecutionLogIdentifier)
 
-			e.err = err
+			e.err = faaserrors.NewExecutionFailedError(err)
 			e.updateStatus(StatusStartingFailed)
 			return
 		}
 
 		e.updateStatus(StatusRunning)
 
-		e.err = e.cmd.Run()
+		err = e.cmd.Run()
+		if err != nil {
+			e.err = faaserrors.NewExecutionFailedError(err)
+		}
 
 		if e.err != nil {
 			e.logger.Trace().
@@ -281,7 +290,7 @@ func (e *FunctionExecution) launch(sync *chan uint) error {
 				Msgf("[%s] Function execution has failed", FunctionExecutionLogIdentifier)
 
 			if errors.Is(e.ctx.Err(), context.DeadlineExceeded) {
-				e.err = e.ctx.Err()
+				e.err = faaserrors.NewExecutionTimeoutError(e.ctx.Err())
 				e.updateStatus(StatusTimeout)
 			} else {
 				e.updateStatus(StatusError)
@@ -320,10 +329,10 @@ func NewFunctionExecution(
 	timeout int64,
 	body string,
 	logger *zerolog.Logger,
-) (*FunctionExecution, error) {
+) (*FunctionExecution, infrastructureerrors.ApplicationError) {
 	args, err := shell.Fields(command, nil)
 	if err != nil {
-		return nil, err
+		return nil, faaserrors.NewFaasCommandCouldNotBeParsedError(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)

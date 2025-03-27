@@ -13,7 +13,9 @@
 
 package http
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type SizeAwareWriter struct {
 	http.ResponseWriter

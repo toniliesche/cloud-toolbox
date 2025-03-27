@@ -14,9 +14,9 @@
 package http
 
 import (
-	"cloud-toolbox/internal/domain/errors"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http/interfaces"
 	"context"
 	"fmt"
@@ -34,7 +34,7 @@ type Server struct {
 	server *http.Server
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run() errors.ApplicationError {
 	s.logger.Info().
 		Msgf("[%s] Starting http server", ServerLogIdentifier)
 
@@ -46,19 +46,29 @@ func (s *Server) Run() error {
 		Handler: s.router,
 	}
 
-	return s.server.ListenAndServe()
+	err := s.server.ListenAndServe()
+	if err != nil {
+		return errors.NewGenericError(err)
+	}
+
+	return nil
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
+func (s *Server) Shutdown(ctx context.Context) errors.ApplicationError {
 	s.logger.Info().
 		Msgf("[%s] Shutting down http server", ServerLogIdentifier)
 
-	return s.server.Shutdown(ctx)
+	err := s.server.Shutdown(ctx)
+	if err != nil {
+		return errors.NewGenericError(err)
+	}
+
+	return nil
 }
 
-func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) error {
+func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) errors.ApplicationError {
 	if handler == nil {
-		return errors.NewServerError("Passed HttpHandler is `nil`")
+		return errors.NewRouteRegisterError(fmt.Errorf("passed HttpHandler is `nil`"))
 	}
 
 	routes := handler.GetRoutes()
@@ -91,7 +101,7 @@ func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) error {
 	return nil
 }
 
-func NewServer(container *di.Container) (*Server, error) {
+func NewServer(container *di.Container) (*Server, errors.ApplicationError) {
 	if container == nil {
 		return nil, errors.NewContainerMissingError("HttpServer")
 	}

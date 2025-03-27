@@ -13,10 +13,13 @@
 
 package interfaces
 
-import "cloud-toolbox/internal/infrastructure/runtime/interfaces"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+	"cloud-toolbox/internal/infrastructure/runtime/interfaces"
+)
 
 type HttpServer interface {
 	interfaces.ShutdownService
-	RegisterRoutes(handler HttpHandler) error
-	Run() error
+	RegisterRoutes(handler HttpHandler) errors.ApplicationError
+	Run() errors.ApplicationError
 }

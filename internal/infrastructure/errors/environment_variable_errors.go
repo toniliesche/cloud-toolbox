@@ -13,28 +13,23 @@
 
 package errors
 
-type ConfigCreateError struct {
-	message string
-}
-
-func (e ConfigCreateError) Error() string {
-	return e.message
-}
-
-func NewMissingEnvironmentVariableError(variable string) error {
-	return ConfigCreateError{
+func NewMissingEnvironmentVariableError(variable string) ApplicationError {
+	return InfrastructureError{
 		message: "environment variable `" + variable + "` must exist",
+		code:    ErrorCodeEnvironmentVariableMissing,
 	}
 }
 
-func NewInvalidIntegerEnvironmentVariableError(variable string, value string) error {
-	return ConfigCreateError{
+func NewInvalidIntegerEnvironmentVariableError(variable string, value string) ApplicationError {
+	return InfrastructureError{
 		message: "environment variable `" + variable + "` must be an integer, got `" + value + "`",
+		code:    ErrorCodeEnvironmentVariableMustBeInteger,
 	}
 }
 
-func NewInvalidBooleanEnvironmentVariableError(variable string, value string) error {
-	return ConfigCreateError{
+func NewInvalidBooleanEnvironmentVariableError(variable string, value string) ApplicationError {
+	return InfrastructureError{
 		message: "environment variable `" + variable + "` must be a boolean, got `" + value + "`",
+		code:    ErrorCodeEnvironmentVariableMustBeBoolean,
 	}
 }

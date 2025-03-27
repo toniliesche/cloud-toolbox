@@ -13,8 +13,11 @@
 
 package interfaces
 
-import "context"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+	"context"
+)
 
 type ShutdownService interface {
-	Shutdown(cxt context.Context) error
+	Shutdown(cxt context.Context) errors.ApplicationError
 }

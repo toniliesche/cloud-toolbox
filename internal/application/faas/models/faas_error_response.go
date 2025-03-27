@@ -14,24 +14,17 @@
 package models
 
 import (
-	httperrors "cloud-toolbox/internal/infrastructure/http/errors"
-	"errors"
-	"net/http"
+	"cloud-toolbox/internal/infrastructure/errors"
 )
 
 type FaasErrorResponse struct {
 	ExecutionId string
 	Status      string
-	Err         error
+	Err         errors.ApplicationError
 }
 
 func (f *FaasErrorResponse) GetStatusCode() int {
-	var httpError httperrors.HttpError
-	if errors.As(f.Err, &httpError) {
-		return httpError.Status
-	}
-
-	return http.StatusInternalServerError
+	return errors.MapToStatusCode(f.Err.Code())
 }
 
 func (f *FaasErrorResponse) GetBody() interface{} {
@@ -47,10 +40,10 @@ func (f *FaasErrorResponse) GetBody() interface{} {
 	return body
 }
 
-func NewFaasErrorResponse(executionId string, status string, err error) *FaasErrorResponse {
+func NewFaasErrorResponse(executionId string, errorCode string, err errors.ApplicationError) *FaasErrorResponse {
 	return &FaasErrorResponse{
 		ExecutionId: executionId,
-		Status:      status,
+		Status:      errorCode,
 		Err:         err,
 	}
 }

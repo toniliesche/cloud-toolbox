@@ -15,34 +15,37 @@ package errors
 
 import "fmt"
 
-type ContainerCreateError struct {
-	message string
-}
-
-func (e ContainerCreateError) Error() string {
-	return e.message
-}
-
-func NewResolveDependencyError(service string, dependency string) error {
-	return ContainerCreateError{
+func NewResolveDependencyError(service string, dependency string) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("can't initalize service `%s`: can't resolve dependency `%s`", service, dependency),
+		code:    ErrorCodeContainerMissingDependency,
 	}
 }
 
-func NewInvalidConfigError(service string, err error) error {
-	return ContainerCreateError{
+func NewInvalidConfigError(service string, err error) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("can't initalize service `%s`: invalid application config: %v", service, err),
+		code:    ErrorCodeContainerInvalidConfig,
 	}
 }
 
-func NewApplicationSetupError(application string, err error) error {
-	return ContainerCreateError{
+func NewApplicationSetupError(application string, err error) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("can't setup application `%s`: %v", application, err),
+		code:    ErrorCodeContainerApplicationSetup,
 	}
 }
 
-func NewContainerMissingError(service string) error {
-	return ContainerCreateError{
+func NewContainerMissingError(service string) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("can't initalize service `%s`: container needed, got `nil` instead", service),
+		code:    ErrorCodeContainerMissing,
+	}
+}
+
+func NewContainerConfigMissingError() ApplicationError {
+	return InfrastructureError{
+		message: "no application config provided",
+		code:    ErrorCodeContainerConfigMissing,
 	}
 }

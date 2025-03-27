@@ -17,15 +17,12 @@ import (
 	faasapperrors "cloud-toolbox/internal/application/faas/errors"
 	faasinterfaces "cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/application/faas/models"
-	domainerrors "cloud-toolbox/internal/domain/errors"
-	faasdomainerrors "cloud-toolbox/internal/domain/faas/errors"
 	faasmodels "cloud-toolbox/internal/domain/faas/models"
 	modelinterfaces "cloud-toolbox/internal/domain/models/interfaces"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
-	httpmodels "cloud-toolbox/internal/infrastructure/http/errors"
+	domainerrors "cloud-toolbox/internal/infrastructure/errors"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -44,7 +41,7 @@ type FunctionAsAService struct {
 func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfaces.Response {
 	status := f.registry.GetStatus(executionId)
 	if status == "" {
-		return models.NewFaasErrorResponse("", "not-found", httpmodels.NewNotFoundError(faasapperrors.NewExecutionNotFoundError(executionId)))
+		return models.NewFaasErrorResponse("", "not-found", faasapperrors.NewExecutionNotFoundError(executionId))
 	}
 
 	data := map[string]interface{}{
@@ -86,7 +83,7 @@ func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Respons
 			Err(err).
 			Msgf("[%s] Failed to unmarshal payload to FaasRequestSource", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(err))
+		return models.NewFaasErrorResponse("", "failed-create", domainerrors.NewRequestParsingFailedError(err))
 	}
 
 	f.logger.Trace().
@@ -98,7 +95,7 @@ func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Respons
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to validate FaasRequestSource payload", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(err))
+		return models.NewFaasErrorResponse("", "failed-create", err)
 	}
 
 	f.logger.Debug().
@@ -110,7 +107,7 @@ func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Respons
 	case "ctb:rmq":
 		return f.runRabbitMQSourceFunction(executionId, payload)
 	default:
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(faasapperrors.NewUnknownPayloadTypeError(base.Source)))
+		return models.NewFaasErrorResponse("", "failed-create", domainerrors.NewUnknownPayloadTypeError(base.Source))
 	}
 }
 
@@ -130,7 +127,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to unmarshal payload to FaasRequest", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(faasapperrors.NewPayloadParsingError(err)))
+		return models.NewFaasErrorResponse("", "failed-create", domainerrors.NewRequestParsingFailedError(err))
 	}
 
 	f.logger.Trace().
@@ -143,7 +140,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to validate FaasRequest", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(err))
+		return models.NewFaasErrorResponse("", "failed-create", err)
 	}
 
 	return f.runFunction(executionId, request)
@@ -154,14 +151,14 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 		Str("execution-id", executionId).
 		Msgf("[%s] Trying to marshal records to JSON", FunctionAsAServiceLogIdentifier)
 
-	recordsJson, err := json.Marshal(request.Records)
-	if err != nil {
+	recordsJson, jsonErr := json.Marshal(request.Records)
+	if jsonErr != nil {
 		f.logger.Warn().
-			Err(err).
+			Err(jsonErr).
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to marshal records to JSON", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewBadRequestError(faasapperrors.NewPayloadParsingError(err)))
+		return models.NewFaasErrorResponse("", "failed-create", domainerrors.NewRequestParsingFailedError(jsonErr))
 	}
 
 	f.logger.Trace().
@@ -175,7 +172,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to create function execution", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse("", "failed-create", httpmodels.NewInternalServerError(err))
+		return models.NewFaasErrorResponse("", "failed-create", err)
 	}
 
 	convertedRequest := request.ToAbstractRequest()
@@ -186,7 +183,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 			Str("execution-id", executionId).
 			Msgf("[%s] Failed to add function execution to registry", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse(executionId, "failed-create", httpmodels.NewInternalServerError(err))
+		return models.NewFaasErrorResponse(executionId, "failed-create", err)
 	}
 
 	f.logger.Trace().
@@ -202,19 +199,19 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 
 		fmt.Printf("%T\n", err)
 
-		if errors.As(err, new(faasdomainerrors.RejectedError)) {
+		if err.Code() == domainerrors.ErrorCodeFaasLimitExceeded {
 			f.logger.Trace().
 				Str("execution-id", executionId).
 				Msgf("[%s] Function execution has been rejected", FunctionAsAServiceLogIdentifier)
 
-			return models.NewFaasErrorResponse(executionId, "rejected", httpmodels.NewTooManyRequestsError(err))
+			return models.NewFaasErrorResponse(executionId, "rejected", err)
 		}
 
 		f.logger.Trace().
 			Str("execution-id", executionId).
 			Msgf("[%s] Function execution has failed", FunctionAsAServiceLogIdentifier)
 
-		return models.NewFaasErrorResponse(executionId, "failed-start", httpmodels.NewInternalServerError(err))
+		return models.NewFaasErrorResponse(executionId, "failed-start", err)
 	}
 
 	if !request.Async {
@@ -249,7 +246,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 		}
 
 		if err != nil {
-			return models.NewFaasErrorResponse(executionId, functionExecution.GetStatus(), httpmodels.NewInternalServerError(err))
+			return models.NewFaasErrorResponse(executionId, functionExecution.GetStatus(), err)
 		}
 
 		data := map[string]interface{}{
@@ -282,7 +279,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 	}
 }
 
-func NewFunctionAsAServiceService(container *di.Container) (faasinterfaces.FunctionAsAService, error) {
+func NewFunctionAsAServiceService(container *di.Container) (faasinterfaces.FunctionAsAService, domainerrors.ApplicationError) {
 	if container == nil {
 		return nil, domainerrors.NewContainerMissingError("FunctionAsAServiceService")
 	}

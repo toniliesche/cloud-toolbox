@@ -14,7 +14,7 @@
 package config
 
 import (
-	"cloud-toolbox/internal/domain/errors"
+	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
 )
 
@@ -24,7 +24,7 @@ type LogConfig struct {
 	Path    string `yaml:"path"`
 }
 
-func (c *LogConfig) Validate(path string) error {
+func (c *LogConfig) Validate(path string) errors.ApplicationError {
 	if c.Level == "" {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.level", path))
 	}
@@ -32,7 +32,7 @@ func (c *LogConfig) Validate(path string) error {
 	return nil
 }
 
-func getLogConfigFromEnvironment() (*LogConfig, error) {
+func getLogConfigFromEnvironment() (*LogConfig, errors.ApplicationError) {
 	devMode, err := GetEnvironmentBool("LOG_DEV_MODE", false)
 	if err != nil {
 		return nil, err

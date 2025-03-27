@@ -13,30 +13,34 @@
 
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
-type RequestError struct {
-	message string
+func NewRequestParsingFailedError(err error) ApplicationError {
+	return InfrastructureError{
+		message: fmt.Sprintf("Error parsing request payload: %v", err),
+		code:    ErrorCodeRequestParsingFailed,
+	}
 }
 
-func (e RequestError) Error() string {
-	return e.message
-}
-
-func NewMissingRequestFieldError(field string) error {
-	return RequestError{
+func NewMissingRequestFieldError(field string) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("missing field `%s` in request payload", field),
+		code:    ErrorCodeRequestParsingMissingPayloadField,
 	}
 }
 
-func NewEmptyRequestFieldError(field string) error {
-	return RequestError{
+func NewEmptyRequestFieldError(field string) ApplicationError {
+	return InfrastructureError{
 		message: fmt.Sprintf("field `%s` in request payload must contain at least one item", field),
+		code:    ErrorCodeRequestParsingEmptyPayloadField,
 	}
 }
 
-func NewRequestParsingError(err error) error {
-	return RequestError{
-		message: fmt.Sprintf("error parsing request: %s", err.Error()),
+func NewUnknownPayloadTypeError(payloadType string) ApplicationError {
+	return InfrastructureError{
+		message: fmt.Sprintf("Unknown payload type: `%s`", payloadType),
+		code:    ErrorCodeRequestParsingUnknownPayloadType,
 	}
 }

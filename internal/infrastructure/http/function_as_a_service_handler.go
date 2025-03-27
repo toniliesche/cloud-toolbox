@@ -15,8 +15,8 @@ package http
 
 import (
 	"cloud-toolbox/internal/application/faas/interfaces"
-	domainerrors "cloud-toolbox/internal/domain/errors"
 	"cloud-toolbox/internal/infrastructure/di"
+	domainerrors "cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http/models"
 	"github.com/rs/zerolog"
 	"io"
@@ -79,7 +79,7 @@ func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWrit
 	h.sendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
 
-func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceHandler, error) {
+func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceHandler, domainerrors.ApplicationError) {
 	if container == nil {
 		return nil, domainerrors.NewContainerMissingError("FunctionAsAServiceHandler")
 	}

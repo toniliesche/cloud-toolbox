@@ -18,13 +18,14 @@ import (
 	faasinterfaces "cloud-toolbox/internal/application/faas/models/interfaces"
 	"cloud-toolbox/internal/domain/faas/interfaces"
 	faasdomainmodels "cloud-toolbox/internal/domain/faas/models"
+	"cloud-toolbox/internal/infrastructure/errors"
 )
 
 type FunctionRegistry interface {
 	interfaces.UpdateListener
-	AddRecord(function *faasdomainmodels.FunctionExecution, request *faasappmodels.FaasRequest[faasinterfaces.FaasRecord]) error
+	AddRecord(function *faasdomainmodels.FunctionExecution, request *faasappmodels.FaasRequest[faasinterfaces.FaasRecord]) errors.ApplicationError
 	GetRecord(executionId string) *faasappmodels.ExecutionRecord
 	GetStatus(executionId string) string
 	GetOutput(id string) string
-	GetError(id string) error
+	GetError(id string) errors.ApplicationError
 }

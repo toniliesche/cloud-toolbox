@@ -13,6 +13,10 @@
 
 package interfaces
 
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+)
+
 type Validatable interface {
-	Validate() error
+	Validate() errors.ApplicationError
 }

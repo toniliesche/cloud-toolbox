@@ -11,20 +11,15 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package errors
+package models
 
-import "fmt"
+import "time"
 
-type NilError struct {
-	message string
-}
-
-func (e NilError) Error() string {
-	return e.message
-}
-
-func NewNilError(expected string) error {
-	return NilError{
-		message: fmt.Sprintf("Expected %s, got `nil` instead", expected),
-	}
+type FunctionExecution struct {
+	Id      string
+	Output  string
+	Status  string
+	Error   string
+	Created time.Time
+	Updated time.Time
 }

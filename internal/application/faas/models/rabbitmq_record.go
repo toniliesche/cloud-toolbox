@@ -13,7 +13,9 @@
 
 package models
 
-import "cloud-toolbox/internal/application/faas/errors"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+)
 
 type RabbitMQRecord struct {
 	MessageId string `json:"messageId"`
@@ -28,13 +30,13 @@ func (r *RabbitMQRecord) GetPayload() string {
 	return r.Body
 }
 
-func (r *RabbitMQRecord) Validate() error {
+func (r *RabbitMQRecord) Validate() errors.ApplicationError {
 	if r.MessageId == "" {
-		return errors.NewMissingPayloadFieldError("messageId")
+		return errors.NewMissingRequestFieldError("messageId")
 	}
 
 	if r.Body == "" {
-		return errors.NewMissingPayloadFieldError("body")
+		return errors.NewMissingRequestFieldError("body")
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 )
 
 type faasResult struct {
@@ -27,4 +28,6 @@ func main() {
 	result, _ := json.Marshal(&faasResult{Status: "success"})
 
 	fmt.Print(string(result))
+
+	time.Sleep(5 * time.Second)
 }
