@@ -103,7 +103,9 @@ func getValidFunctionAsAServiceConfig() *config.FunctionAsAServiceConfig {
 		ApplicationConfig: config.ApplicationConfig{
 			SystemConfig: getValidSystemConfig(),
 		},
-		HttpServer: getValidHttpServerConfig(),
-		Command:    "echo 'Hello, World!'",
+		HttpServer:        getValidHttpServerConfig(),
+		Command:           "echo 'Hello, World!'",
+		ParallelExecution: 1,
+		ExecutionTimeout:  30,
 	}
 }

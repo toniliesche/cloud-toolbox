@@ -54,12 +54,12 @@ func getDefaultHttpServerConfig() *HttpServerConfig {
 func getHttpServerConfigFromEnvironment() (*HttpServerConfig, errors.ApplicationError) {
 	cfg := getDefaultHttpServerConfig()
 
-	host := GetEnvironmentString("HTTP_SERVER_HOST", "")
+	host := GetEnvironmentString("HTTP_SERVER_HOST", httpServerDefaultHost)
 	if host != "" {
 		cfg.Host = host
 	}
 
-	port, err := GetEnvironmentInt("HTTP_SERVER_PORT", 0)
+	port, err := GetEnvironmentInt("HTTP_SERVER_PORT", httpServerDefaultPort)
 	if err != nil {
 		return nil, err
 	}

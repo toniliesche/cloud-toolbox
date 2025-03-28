@@ -17,11 +17,14 @@ import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"gopkg.in/yaml.v3"
 	"os"
+	"slices"
 )
 
 type FunctionAsAServiceConfig struct {
 	ApplicationConfig
 	HttpServer        *HttpServerConfig `yaml:"http"`
+	Redis             *RedisConfig      `yaml:"redis"`
+	StorageBackend    string            `json:"storage_backend"`
 	Command           string            `yaml:"command"`
 	ParallelExecution int64             `yaml:"parallel_execution"`
 	ExecutionTimeout  int64             `yaml:"execution_timeout"`
@@ -60,6 +63,23 @@ func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 		return errors.NewConfigValueNeedsToBeLessThanOrEqualValueError("execution_timeout", 900)
 	}
 
+	validBackends := []string{"inmemory", "redis"}
+	if !slices.Contains(validBackends, c.StorageBackend) {
+		return errors.NewInvalidConfigValueError("storage_backend", validBackends, c.StorageBackend)
+	}
+
+	if c.StorageBackend == "redis" {
+		if c.Redis == nil {
+			return errors.NewMissingConfigSectionError("redis")
+		}
+
+		if err := c.Redis.Validate("redis"); err != nil {
+			return errors.NewValidateConfigSectionError("redis", err)
+		}
+	} else {
+		c.Redis = nil
+	}
+
 	return nil
 }
 
@@ -89,6 +109,7 @@ func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, errors.Applic
 func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
 	return &FunctionAsAServiceConfig{
 		HttpServer: getDefaultHttpServerConfig(),
+		Redis:      getDefaultRedisConfig(),
 	}
 }
 
@@ -127,18 +148,34 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		return nil, err
 	}
 
-	SystemConfig, err := getSystemConfigFromEnvironment()
+	systemConfig, err := getSystemConfigFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
 
+	storageBackend := GetEnvironmentString("FUNCTION_AS_A_SERVICE_STORAGE_BACKEND", "")
+
+	if storageBackend == "" {
+		storageBackend = "inmemory"
+	}
+
+	var redisConfig *RedisConfig
+	if storageBackend == "redis" {
+		redisConfig, err = getRedisConfigFromEnvironment()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &FunctionAsAServiceConfig{
 		ApplicationConfig: ApplicationConfig{
-			SystemConfig: SystemConfig,
+			SystemConfig: systemConfig,
 		},
 		HttpServer:        httpConfig,
+		Redis:             redisConfig,
 		Command:           command,
 		ParallelExecution: parallelExecution,
 		ExecutionTimeout:  executionTimeout,
+		StorageBackend:    storageBackend,
 	}, nil
 }

@@ -16,10 +16,34 @@ package models
 import "time"
 
 type FunctionExecution struct {
-	Id      string
-	Output  string
-	Status  string
-	Error   string
-	Created time.Time
-	Updated time.Time
+	Id            string         `json:"id"`
+	Output        string         `json:"output"`
+	Status        string         `json:"status"`
+	StatusUpdates []StatusUpdate `json:"status_updates"`
+	Error         string         `json:"error"`
+	Created       time.Time      `json:"created"`
+	Updated       time.Time      `json:"updated"`
+}
+
+func FunctionExecutionFromRecord(record *ExecutionRecord) *FunctionExecution {
+	timeObj := time.Now()
+	status := record.FunctionExecution.GetStatus()
+
+	statusUpdates := make([]StatusUpdate, 0)
+	statusUpdate := &StatusUpdate{
+		Status: status,
+		Time:   timeObj,
+	}
+
+	statusUpdates = append(statusUpdates, *statusUpdate)
+
+	return &FunctionExecution{
+		Id:            record.ExecutionId,
+		Output:        "",
+		Status:        status,
+		StatusUpdates: statusUpdates,
+		Error:         "",
+		Created:       timeObj,
+		Updated:       timeObj,
+	}
 }

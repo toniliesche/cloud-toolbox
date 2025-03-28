@@ -84,3 +84,10 @@ func NewConfigValueNeedsToBeLessThanOrEqualValueError(field string, value int) A
 		code:    ErrorCodeConfigValueMustBeLessThanOrEqual,
 	}
 }
+
+func NewInvalidConfigValueError(field string, allowedValues []string, value string) ApplicationError {
+	return InfrastructureError{
+		message: fmt.Sprintf("config value `%s` must be one of `%v`, but is `%s`", field, allowedValues, value),
+		code:    ErrorCodeConfigValueInvalid,
+	}
+}

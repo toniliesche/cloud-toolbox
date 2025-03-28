@@ -18,6 +18,9 @@ import (
 	"cloud-toolbox/internal/application/faas/services"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/config/interfaces"
+	"cloud-toolbox/internal/infrastructure/database/connectors"
+	"cloud-toolbox/internal/infrastructure/database/repositories/inmemory"
+	"cloud-toolbox/internal/infrastructure/database/repositories/redis"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
@@ -29,10 +32,9 @@ import (
 const ContainerBuilderLogIdentifier = "ContainerBuilder"
 
 type ContainerBuilder struct {
-	application     string
-	containerConfig *di.ContainerConfig
-	faasConfig      *config.FunctionAsAServiceConfig
-	logger          *zerolog.Logger
+	application string
+	faasConfig  *config.FunctionAsAServiceConfig
+	logger      *zerolog.Logger
 }
 
 func (b *ContainerBuilder) SetFaasConfig(cfg *config.FunctionAsAServiceConfig) *ContainerBuilder {
@@ -104,10 +106,33 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 		return errors.NewResolveDependencyError("Function as a Service", "faasConfig")
 	}
 
-	container.FunctionAsAServiceConfig = b.faasConfig
-
 	if err = b.faasConfig.Validate(); err != nil {
 		return errors.NewApplicationSetupError("Function as a Service", err)
+	}
+	container.FunctionAsAServiceConfig = b.faasConfig
+
+	if b.faasConfig.StorageBackend == "redis" {
+		b.logger.Trace().
+			Msgf("[%s] Retrieving RedisConfig from `FunctionAsAService` config", ContainerBuilderLogIdentifier)
+		container.RedisConfig = b.faasConfig.Redis
+
+		b.logger.Trace().
+			Msgf("[%s] Initializing `Redis` storage backend", ContainerBuilderLogIdentifier)
+		if container.Redis, err = connectors.NewRedis(container); err != nil {
+			return err
+		}
+
+		b.logger.Trace().
+			Msgf("[%s] Initializing `FunctionExecutionRepository` with redis backend", ContainerBuilderLogIdentifier)
+		if container.FunctionExecutionRepository, err = redis.NewFunctionExecutionRepository(container); err != nil {
+			return err
+		}
+	} else {
+		b.logger.Trace().
+			Msgf("[%s] Initializing `FunctionExecutionRepository` with storage backend", ContainerBuilderLogIdentifier)
+		if container.FunctionExecutionRepository, err = inmemory.NewFunctionExecutionRepository(container); err != nil {
+			return err
+		}
 	}
 
 	b.logger.Trace().
@@ -188,8 +213,6 @@ func (b *ContainerBuilder) setupLogger(container *di.Container) errors.Applicati
 	return nil
 }
 
-func NewBuilder(cfg *di.ContainerConfig) *ContainerBuilder {
-	return &ContainerBuilder{
-		containerConfig: cfg,
-	}
+func NewBuilder() *ContainerBuilder {
+	return &ContainerBuilder{}
 }

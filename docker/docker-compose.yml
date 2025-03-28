@@ -22,6 +22,9 @@ services:
       - FUNCTION_AS_A_SERVICE_COMMAND=/usr/local/bin/hello-world-faas
       - FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION=2
       - FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT=10
+      - FUNCTION_AS_A_SERVICE_STORAGE_BACKEND=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - LOG_DEV_MODE=true
       - LOG_LEVEL=trace
       - LOG_PATH=/dev/stdout

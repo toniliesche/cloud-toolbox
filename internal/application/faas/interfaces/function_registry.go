@@ -25,7 +25,7 @@ type FunctionRegistry interface {
 	interfaces.UpdateListener
 	AddRecord(function *faasdomainmodels.FunctionExecution, request *faasappmodels.FaasRequest[faasinterfaces.FaasRecord]) errors.ApplicationError
 	GetRecord(executionId string) *faasappmodels.ExecutionRecord
+	GetError(executionId string) string
 	GetStatus(executionId string) string
 	GetOutput(id string) string
-	GetError(id string) errors.ApplicationError
 }

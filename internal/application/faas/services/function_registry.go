@@ -17,15 +17,27 @@ import (
 	"cloud-toolbox/internal/application/faas/models"
 	"cloud-toolbox/internal/application/faas/models/interfaces"
 	faasmodels "cloud-toolbox/internal/domain/faas/models"
+	dbinterfaces "cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 )
 
 type FunctionRegistry struct {
 	executions map[string]*models.ExecutionRecord
-	statuses   map[string]string
-	outputs    map[string]string
-	errors     map[string]errors.ApplicationError
+	repository dbinterfaces.FunctionExecutionRepository
+}
+
+func (f *FunctionRegistry) GetError(executionId string) string {
+	fn, err := f.repository.GetFunction(executionId)
+	if err != nil {
+		return ""
+	}
+
+	return fn.Error
+}
+
+func (f *FunctionRegistry) GetRecord(executionId string) *models.ExecutionRecord {
+	return f.executions[executionId]
 }
 
 func (f *FunctionRegistry) AddRecord(function *faasmodels.FunctionExecution, request *models.FaasRequest[interfaces.FaasRecord]) errors.ApplicationError {
@@ -35,31 +47,31 @@ func (f *FunctionRegistry) AddRecord(function *faasmodels.FunctionExecution, req
 		function,
 	)
 
+	fn := models.FunctionExecutionFromRecord(record)
+	err := f.repository.SaveFunction(fn)
+
 	f.executions[function.GetId()] = record
 	function.AddListener(f)
 
-	return nil
-}
-
-func (f *FunctionRegistry) GetRecord(executionId string) *models.ExecutionRecord {
-	record, ok := f.executions[executionId]
-	if !ok {
-		return nil
-	}
-
-	return record
+	return err
 }
 
 func (f *FunctionRegistry) GetStatus(executionId string) string {
-	return f.statuses[executionId]
+	fn, err := f.repository.GetFunction(executionId)
+	if err != nil {
+		return ""
+	}
+
+	return fn.Status
 }
 
 func (f *FunctionRegistry) GetOutput(executionId string) string {
-	return f.outputs[executionId]
-}
+	fn, err := f.repository.GetFunction(executionId)
+	if err != nil {
+		return ""
+	}
 
-func (f *FunctionRegistry) GetError(executionId string) errors.ApplicationError {
-	return f.errors[executionId]
+	return fn.Output
 }
 
 func (f *FunctionRegistry) Notify(executionId string, status int) {
@@ -68,19 +80,32 @@ func (f *FunctionRegistry) Notify(executionId string, status int) {
 		return
 	}
 
-	f.statuses[executionId] = record.FunctionExecution.GetStatus()
+	newStatus := record.FunctionExecution.GetStatus()
+	f.repository.UpdateStatus(executionId, newStatus)
 	if record.FunctionExecution.IsFinished() {
-		f.outputs[executionId], _ = record.FunctionExecution.GetOutput()
-		f.errors[executionId] = record.FunctionExecution.GetError()
+		err := record.FunctionExecution.GetError()
+		if err != nil {
+			f.repository.SaveError(executionId, err.Error())
+		} else {
+			output, _ := record.FunctionExecution.GetOutput()
+			f.repository.SaveOutput(executionId, output)
+		}
+
 		delete(f.executions, executionId)
 	}
 }
 
 func NewFunctionRegistry(container *di.Container) (*FunctionRegistry, errors.ApplicationError) {
+	if container == nil {
+		return nil, errors.NewContainerMissingError("FunctionRegistry")
+	}
+
+	if container.FunctionExecutionRepository == nil {
+		return nil, errors.NewResolveDependencyError("FunctionRegistry", "FunctionExecutionRepository")
+	}
+
 	return &FunctionRegistry{
 		executions: make(map[string]*models.ExecutionRecord),
-		statuses:   make(map[string]string),
-		outputs:    make(map[string]string),
-		errors:     make(map[string]errors.ApplicationError),
+		repository: container.FunctionExecutionRepository,
 	}, nil
 }

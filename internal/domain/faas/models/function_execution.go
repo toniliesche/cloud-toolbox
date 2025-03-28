@@ -106,7 +106,7 @@ func (e *FunctionExecution) Run(sync *chan uint) infrastructureerrors.Applicatio
 	}
 }
 
-func (e *FunctionExecution) Wait() {
+func (e *FunctionExecution) Wait() infrastructureerrors.ApplicationError {
 	e.logger.Trace().
 		Msgf("[%s] Waiting for function execution to finish", FunctionExecutionLogIdentifier)
 
@@ -114,6 +114,8 @@ func (e *FunctionExecution) Wait() {
 
 	e.logger.Trace().
 		Msgf("[%s] Finished waiting for function execution", FunctionExecutionLogIdentifier)
+
+	return e.err
 }
 
 func (e *FunctionExecution) IsFinished() bool {

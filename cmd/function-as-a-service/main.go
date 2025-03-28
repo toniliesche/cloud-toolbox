@@ -15,7 +15,6 @@ package main
 
 import (
 	"cloud-toolbox/internal/infrastructure/config"
-	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/setup"
 	"context"
 	"errors"
@@ -33,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	container, err := setup.NewBuilder(&di.ContainerConfig{}).
+	container, err := setup.NewBuilder().
 		SetFaasConfig(cfg).
 		Build()
 

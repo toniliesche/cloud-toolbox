@@ -16,17 +16,22 @@ package di
 import (
 	faasinterfaces "cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/infrastructure/config"
+	"cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
 	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
 
 type Container struct {
-	FunctionAsAServiceService faasinterfaces.FunctionAsAService
-	FunctionAsAServiceHandler httpinterfaces.HttpHandler
-	HttpServerConfig          *config.HttpServerConfig
-	HttpServer                httpinterfaces.HttpServer
-	SystemConfig              *config.SystemConfig
-	Logger                    *zerolog.Logger
-	FunctionAsAServiceConfig  *config.FunctionAsAServiceConfig
-	FunctionRegistry          faasinterfaces.FunctionRegistry
+	FunctionAsAServiceConfig    *config.FunctionAsAServiceConfig
+	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
+	FunctionAsAServiceService   faasinterfaces.FunctionAsAService
+	FunctionRegistry            faasinterfaces.FunctionRegistry
+	HttpServerConfig            *config.HttpServerConfig
+	HttpServer                  httpinterfaces.HttpServer
+	Logger                      *zerolog.Logger
+	RedisConfig                 *config.RedisConfig
+	SystemConfig                *config.SystemConfig
+	Redis                       *redis.Client
+	FunctionExecutionRepository interfaces.FunctionExecutionRepository
 }

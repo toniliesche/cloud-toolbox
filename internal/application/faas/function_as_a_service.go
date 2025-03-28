@@ -56,8 +56,8 @@ func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfa
 	if status == "failed" || status == "timeout" || status == "rejected" {
 		err := f.registry.GetError(executionId)
 
-		if err != nil {
-			data["error"] = err.Error()
+		if err != "" {
+			data["error"] = err
 		}
 	}
 
@@ -219,7 +219,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 			Str("execution-id", executionId).
 			Msgf("[%s] Waiting for function execution to finish", FunctionAsAServiceLogIdentifier)
 
-		functionExecution.Wait()
+		err := functionExecution.Wait()
 
 		f.logger.Debug().
 			Str("execution-id", executionId).
@@ -228,7 +228,6 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 		var httpStatus int
 		status := functionExecution.GetStatus()
 
-		err := f.registry.GetError(executionId)
 		output := f.registry.GetOutput(executionId)
 		if status == "success" {
 			f.logger.Debug().

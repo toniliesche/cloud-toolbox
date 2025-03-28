@@ -15,6 +15,7 @@ const (
 	ErrorCodeConfigValueMustBeGreaterThanZero    = 10103
 	ErrorCodeConfigValueMustBeGreaterThanOrEqual = 10104
 	ErrorCodeConfigValueMustBeLessThanOrEqual    = 10105
+	ErrorCodeConfigValueInvalid                  = 10106
 	ErrorCodeContainerConfigMissing              = 10200
 	ErrorCodeContainerMissingDependency          = 10201
 	ErrorCodeContainerInvalidConfig              = 10202
@@ -35,6 +36,8 @@ const (
 	ErrorCodeRequestParsingMissingPayloadField = 12001
 	ErrorCodeRequestParsingEmptyPayloadField   = 12002
 	ErrorCodeRequestParsingUnknownPayloadType  = 12003
+
+	ErrorCodeDatabaseItemNotFound = 13000
 
 	/* function as a service errors */
 	ErrorCodeFaasExecutionNotFound = 20000
@@ -58,6 +61,10 @@ func MapToStatusCode(errorCode int) int {
 
 	if errorCode < 13000 {
 		return http.StatusBadRequest
+	}
+
+	if errorCode < 14000 {
+		return http.StatusNotFound
 	}
 
 	return mapFaasErrorToStatusCode(errorCode)
