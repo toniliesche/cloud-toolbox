@@ -15,13 +15,17 @@ ifneq ("$(wildcard $(CURDIR)/build.properties)","")
 	include $(CURDIR)/build.properties
 endif
 
+include $(CURDIR)/make/rabbitmq.mk
 include $(CURDIR)/make/scylladb.mk
 include $(CURDIR)/make/versioning.mk
 
-CONTAINER_SCYLLA=test-scylla-1
-TABLE_NAME_FAAS=function_as_a_service_executions
+RABBITMQ_CONTAINER=test-rabbitmq-1
+RABBITMQ_USER=admin
+RABBITMQ_PASSWORD=admin
+SCYLLA_CONTAINER=test-scylla-1
 SCYLLA_HOST=test-scylla-1
 SCYLLA_PORT=8000
+TABLE_NAME_FAAS=function_as_a_service_executions
 
 PROJECTS=function-as-a-service
 DEBIANVER=bookworm

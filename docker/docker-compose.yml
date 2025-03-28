@@ -36,6 +36,15 @@ services:
       - LOG_LEVEL=trace
       - LOG_PATH=/dev/stdout
 
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   redis:
     image: redis:8.0-M04-alpine
     hostname: redis
@@ -45,7 +54,7 @@ services:
       - redis_data:/data
 
   scylla:
-    image: scylladb/scylla
+    image: scylladb/scylla:6.2
     hostname: scylla
     ports:
       - "9042:9042"
@@ -55,6 +64,8 @@ services:
       - scylla_data:/var/lib/scylla
 
 volumes:
+  rabbitmq_data:
+    driver: local
   redis_data:
     driver: local
   scylla_data:

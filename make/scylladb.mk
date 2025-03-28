@@ -15,7 +15,7 @@ create-scylla-tables:
 	@echo "Checking if the Scylla container is running..."
 	@RETRY_LIMIT=10; \
 	RETRY_COUNT=0; \
-	until docker inspect -f '{{.State.Running}}' $(CONTAINER_SCYLLA) 2>/dev/null | grep -q "true" || [ $$RETRY_COUNT -ge $$RETRY_LIMIT ]; do \
+	until docker inspect -f '{{.State.Running}}' $(SCYLLA_CONTAINER) 2>/dev/null | grep -q "true" || [ $$RETRY_COUNT -ge $$RETRY_LIMIT ]; do \
 		echo "Scylla container is not running yet. Retrying..."; \
 		RETRY_COUNT=$$((RETRY_COUNT + 1)); \
 		sleep 2; \
@@ -29,7 +29,7 @@ create-scylla-tables:
 	@echo "Checking if Scylla Alternator API is available inside the container..."
 	@RETRY_LIMIT=10; \
 	RETRY_COUNT=0; \
-	docker exec -it $(CONTAINER_SCYLLA) /bin/bash -c "\
+	docker exec -it $(SCYLLA_CONTAINER) /bin/bash -c "\
 		RETRY_LIMIT=10; \
 		RETRY_COUNT=0; \
 		until curl -s --get http://$(SCYLLA_HOST):$(SCYLLA_PORT) | grep -q 'healthy: $(SCYLLA_HOST):$(SCYLLA_PORT)' || [ $$RETRY_COUNT -ge $$RETRY_LIMIT ]; do \
