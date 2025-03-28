@@ -24,6 +24,7 @@ type FunctionAsAServiceConfig struct {
 	ApplicationConfig
 	HttpServer        *HttpServerConfig `yaml:"http"`
 	Redis             *RedisConfig      `yaml:"redis"`
+	Scylla            *ScyllaConfig     `yaml:"scylla"`
 	StorageBackend    string            `json:"storage_backend"`
 	StorageTtl        int64             `json:"storage_ttl"`
 	Command           string            `yaml:"command"`
@@ -68,7 +69,7 @@ func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 		return errors.NewConfigValueNeedsToBeGreaterThanOrEqualValueError("storage_ttl", 0)
 	}
 
-	validBackends := []string{"inmemory", "redis"}
+	validBackends := []string{"inmemory", "redis", "scylla"}
 	if !slices.Contains(validBackends, c.StorageBackend) {
 		return errors.NewInvalidConfigValueError("storage_backend", validBackends, c.StorageBackend)
 	}
@@ -83,6 +84,18 @@ func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 		}
 	} else {
 		c.Redis = nil
+	}
+
+	if c.StorageBackend == "scylla" {
+		if c.Scylla == nil {
+			return errors.NewMissingConfigSectionError("scylla")
+		}
+
+		if err := c.Scylla.Validate("scylla"); err != nil {
+			return errors.NewValidateConfigSectionError("scylla", err)
+		}
+	} else {
+		c.Scylla = nil
 	}
 
 	return nil
@@ -115,6 +128,7 @@ func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
 	return &FunctionAsAServiceConfig{
 		HttpServer:     getDefaultHttpServerConfig(),
 		Redis:          getDefaultRedisConfig(),
+		Scylla:         getDefaultScyllaConfig(),
 		StorageBackend: "inmemory",
 		StorageTtl:     60,
 	}
@@ -175,12 +189,21 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		}
 	}
 
+	var scyllaConfig *ScyllaConfig
+	if storageBackend == "scylla" {
+		scyllaConfig, err = getScyllaConfigFromEnvironment()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &FunctionAsAServiceConfig{
 		ApplicationConfig: ApplicationConfig{
 			SystemConfig: systemConfig,
 		},
 		HttpServer:        httpConfig,
 		Redis:             redisConfig,
+		Scylla:            scyllaConfig,
 		Command:           command,
 		ParallelExecution: parallelExecution,
 		ExecutionTimeout:  executionTimeout,

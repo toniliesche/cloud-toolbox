@@ -11,7 +11,7 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package redis
+package scylla
 
 import (
 	"cloud-toolbox/internal/application/faas/models"
@@ -20,18 +20,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/redis/go-redis/v9"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/rs/zerolog"
 	"time"
 )
 
-const FunctionExecutionRepositoryLogIdentifier = "FunctionExecutionRepository/Redis"
+const FunctionExecutionRepositoryLogIdentifier = "FunctionExecutionRepository/Scylla"
 
 type FunctionExecutionRepository struct {
-	redis      *redis.Client
+	table      string
 	logger     *zerolog.Logger
 	timeToLive time.Duration
 	context    context.Context
+	scylla     *dynamodb.DynamoDB
 }
 
 func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.FunctionExecution, errors.ApplicationError) {
@@ -39,32 +41,26 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 		Str("executionId", executionId).
 		Msgf("[%s] Getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
-	fn := f.redis.JSONGet(f.context, fmt.Sprintf("faas-%s", executionId), "$")
-	if fn.Err() != nil {
-		f.logger.Trace().
-			Err(fn.Err()).
-			Str("executionId", executionId).
-			Msgf("[%s] Error getting function execution", FunctionExecutionRepositoryLogIdentifier)
-
-		return nil, errors.NewGenericError(fn.Err())
+	get := &dynamodb.GetItemInput{
+		TableName: aws.String(f.table),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(executionId),
+			},
+		},
 	}
 
-	function := make([]*FunctionExecution, 0)
-	f.logger.Trace().
-		Str("executionId", executionId).
-		Str("json", fn.Val()).
-		Msgf("[%s] Function execution retrieved", FunctionExecutionRepositoryLogIdentifier)
-	if err := json.Unmarshal([]byte(fn.Val()), &function); err != nil {
+	req, out := f.scylla.GetItemRequest(get)
+	if err := req.Send(); err != nil {
 		f.logger.Trace().
 			Err(err).
 			Str("executionId", executionId).
-			Str("json", fn.Val()).
-			Msgf("[%s] Error unmarshalling function execution", FunctionExecutionRepositoryLogIdentifier)
+			Msgf("[%s] Error getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
 		return nil, errors.NewGenericError(err)
 	}
 
-	if len(function) == 0 {
+	if out.Item == nil {
 		f.logger.Trace().
 			Str("executionId", executionId).
 			Msgf("[%s] Function execution not found", FunctionExecutionRepositoryLogIdentifier)
@@ -72,69 +68,100 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 		return nil, errors.NewItemNotFoundError(executionId)
 	}
 
+	fn := NewFunctionExecutionFromScyllaItem(out.Item)
+
+	result, _ := json.Marshal(fn)
+
 	f.logger.Trace().
 		Str("executionId", executionId).
+		Str("json", string(result)).
 		Msgf("[%s] Function execution found", FunctionExecutionRepositoryLogIdentifier)
 
-	return function[0].ToModel(), nil
+	return fn, nil
 }
 
 func (f *FunctionExecutionRepository) SaveError(executionId string, error string) errors.ApplicationError {
 	timeObj := time.Now()
 
+	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
 		Str("executionId", executionId).
+		Str("ttl", ttl).
 		Msgf("[%s] Saving error", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.error", fmt.Sprintf(`"%s"`, error))
-	if result.Err() != nil {
-		f.logger.Trace().
-			Err(result.Err()).
-			Str("executionId", executionId).
-			Msgf("[%s] Error saving error", FunctionExecutionRepositoryLogIdentifier)
-
-		return errors.NewGenericError(result.Err())
+	update := dynamodb.UpdateItemInput{
+		TableName: aws.String(f.table),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(executionId),
+			},
+		},
+		UpdateExpression: aws.String("SET #error = :error, #updated = :updated, #ttl = :ttl"),
+		ExpressionAttributeNames: map[string]*string{
+			"#error":   aws.String("error"),
+			"#updated": aws.String("updated"),
+			"#ttl":     aws.String("ttl"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":error": {
+				S: aws.String(error),
+			},
+			":updated": {
+				S: aws.String(timeObj.Format(time.RFC3339Nano)),
+			},
+			":ttl": {
+				N: aws.String(ttl),
+			},
+		},
 	}
 
-	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
-	if result.Err() != nil {
+	_, err := f.scylla.UpdateItem(&update)
+	if err != nil {
 		f.logger.Trace().
-			Err(result.Err()).
+			Err(err).
 			Str("executionId", executionId).
 			Msgf("[%s] Error saving error", FunctionExecutionRepositoryLogIdentifier)
 
-		return errors.NewGenericError(result.Err())
+		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
 		Str("executionId", executionId).
 		Msgf("[%s] Error saved", FunctionExecutionRepositoryLogIdentifier)
 
-	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
-
 	return nil
 }
 
 func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExecution) errors.ApplicationError {
+	ttl := fmt.Sprintf("%d", time.Now().Add(f.timeToLive).Unix())
 	f.logger.Trace().
 		Str("executionId", function.Id).
+		Str("ttl", ttl).
 		Msgf("[%s] Saving function", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", function.Id), "$", function)
-	if result.Err() != nil {
+	item := NewScyllaItemFromFunctionExecution(function)
+	item["ttl"] = &dynamodb.AttributeValue{
+		N: aws.String(ttl),
+	}
+
+	put := &dynamodb.PutItemInput{
+		TableName: aws.String(f.table),
+		Item:      item,
+	}
+
+	_, err := f.scylla.PutItem(put)
+	if err != nil {
 		f.logger.Trace().
-			Err(result.Err()).
+			Err(err).
 			Str("executionId", function.Id).
 			Msgf("[%s] Error saving function", FunctionExecutionRepositoryLogIdentifier)
 
-		return errors.NewGenericError(result.Err())
+		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
 		Str("executionId", function.Id).
 		Msgf("[%s] Function saved", FunctionExecutionRepositoryLogIdentifier)
-
-	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", function.Id), f.timeToLive)
 
 	return nil
 }
@@ -142,43 +169,51 @@ func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExec
 func (f *FunctionExecutionRepository) SaveOutput(executionId string, output string) errors.ApplicationError {
 	timeObj := time.Now()
 
+	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
 		Str("executionId", executionId).
+		Str("ttl", ttl).
 		Msgf("[%s] Saving output", FunctionExecutionRepositoryLogIdentifier)
 
-	var js interface{}
-	if json.Unmarshal([]byte(output), &js) != nil {
-		f.logger.Trace().
-			Str("executionId", executionId).
-			Msgf("[%s] Output is not JSON", FunctionExecutionRepositoryLogIdentifier)
-
-		output = fmt.Sprintf(`"%s"`, output)
+	update := dynamodb.UpdateItemInput{
+		TableName: aws.String(f.table),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(executionId),
+			},
+		},
+		UpdateExpression: aws.String("SET #output = :output, #updated = :updated, #ttl = :ttl"),
+		ExpressionAttributeNames: map[string]*string{
+			"#output":  aws.String("output"),
+			"#updated": aws.String("updated"),
+			"#ttl":     aws.String("ttl"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":output": {
+				S: aws.String(output),
+			},
+			":updated": {
+				S: aws.String(timeObj.Format(time.RFC3339Nano)),
+			},
+			":ttl": {
+				N: aws.String(ttl),
+			},
+		},
 	}
 
-	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.output", output)
-	if result.Err() != nil {
+	_, err := f.scylla.UpdateItem(&update)
+	if err != nil {
 		f.logger.Trace().
-			Err(result.Err()).
+			Err(err).
 			Str("executionId", executionId).
 			Msgf("[%s] Error saving output", FunctionExecutionRepositoryLogIdentifier)
 
-		return errors.NewGenericError(result.Err())
-	}
-
-	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
-	if result.Err() != nil {
-		f.logger.Trace().
-			Err(result.Err()).
-			Str("executionId", executionId).
-			Msgf("[%s] Error saving output", FunctionExecutionRepositoryLogIdentifier)
-		return errors.NewGenericError(result.Err())
+		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
 		Str("executionId", executionId).
 		Msgf("[%s] Output saved", FunctionExecutionRepositoryLogIdentifier)
-
-	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -186,50 +221,69 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status string) errors.ApplicationError {
 	timeObj := time.Now()
 
+	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
 		Str("executionId", executionId).
+		Str("ttl", ttl).
 		Str("status", status).
 		Msgf("[%s] Updating status", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
-	if result.Err() != nil {
-		f.logger.Trace().
-			Err(result.Err()).
-			Str("executionId", executionId).
-			Msgf("[%s] Error updating updated date", FunctionExecutionRepositoryLogIdentifier)
-
-		return errors.NewGenericError(result.Err())
+	statusUpdate := map[string]*dynamodb.AttributeValue{
+		"time": {
+			S: aws.String(timeObj.Format(time.RFC3339Nano)),
+		},
+		"status": {
+			S: aws.String(status),
+		},
 	}
 
-	statusUpdate := &models.StatusUpdate{
-		Status: status,
-		Time:   timeObj,
+	update := dynamodb.UpdateItemInput{
+		TableName: aws.String(f.table),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(executionId),
+			},
+		},
+		UpdateExpression: aws.String("SET #status = :status, #updated = :updated, #status_updates = list_append(#status_updates, :status_updates), #ttl = :ttl"),
+		ExpressionAttributeNames: map[string]*string{
+			"#status":         aws.String("status"),
+			"#updated":        aws.String("updated"),
+			"#status_updates": aws.String("status_updates"),
+			"#ttl":            aws.String("ttl"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":status": {
+				S: aws.String(status),
+			},
+			":updated": {
+				S: aws.String(timeObj.Format(time.RFC3339Nano)),
+			},
+			":status_updates": {
+				L: []*dynamodb.AttributeValue{
+					{
+						M: statusUpdate,
+					},
+				},
+			},
+			":ttl": {
+				N: aws.String(ttl),
+			},
+		},
 	}
-	appendResult := f.redis.JSONArrAppend(f.context, fmt.Sprintf("faas-%s", executionId), "$.status_updates", statusUpdate)
-	if appendResult.Err() != nil {
-		f.logger.Trace().
-			Err(appendResult.Err()).
-			Str("executionId", executionId).
-			Msgf("[%s] Error updating status list", FunctionExecutionRepositoryLogIdentifier)
 
-		return errors.NewGenericError(appendResult.Err())
-	}
-
-	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.status", fmt.Sprintf(`"%s"`, status))
-	if result.Err() != nil {
+	_, err := f.scylla.UpdateItem(&update)
+	if err != nil {
 		f.logger.Trace().
-			Err(result.Err()).
+			Err(err).
 			Str("executionId", executionId).
 			Msgf("[%s] Error updating status", FunctionExecutionRepositoryLogIdentifier)
 
-		return errors.NewGenericError(result.Err())
+		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
 		Str("executionId", executionId).
 		Msgf("[%s] Status updated", FunctionExecutionRepositoryLogIdentifier)
-
-	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -243,8 +297,16 @@ func NewFunctionExecutionRepository(container *di.Container) (*FunctionExecution
 		return nil, errors.NewResolveDependencyError(FunctionExecutionRepositoryLogIdentifier, "Context")
 	}
 
-	if container.Redis == nil {
-		return nil, errors.NewResolveDependencyError(FunctionExecutionRepositoryLogIdentifier, "Redis")
+	if container.Scylla == nil {
+		return nil, errors.NewResolveDependencyError(FunctionExecutionRepositoryLogIdentifier, "Scylla")
+	}
+
+	if container.ScyllaConfig == nil {
+		return nil, errors.NewResolveDependencyError(FunctionExecutionRepositoryLogIdentifier, "ScyllaConfig")
+	}
+
+	if err := container.ScyllaConfig.Validate("scylla"); err != nil {
+		return nil, errors.NewInvalidConfigError(FunctionExecutionRepositoryLogIdentifier, err)
 	}
 
 	if container.Logger == nil {
@@ -261,8 +323,9 @@ func NewFunctionExecutionRepository(container *di.Container) (*FunctionExecution
 
 	return &FunctionExecutionRepository{
 		context:    container.Context,
-		redis:      container.Redis,
+		scylla:     container.Scylla,
 		logger:     container.Logger,
+		table:      container.ScyllaConfig.Table,
 		timeToLive: time.Duration(container.FunctionAsAServiceConfig.StorageTtl) * time.Second,
 	}, nil
 }

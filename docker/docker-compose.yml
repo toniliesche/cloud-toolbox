@@ -24,6 +24,12 @@ services:
       - FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT=10
       - FUNCTION_AS_A_SERVICE_STORAGE_BACKEND=redis
       - FUNCTION_AS_A_SERVICE_STORAGE_TTL=10
+      - SCYLLA_USERNAME=faas
+      - SCYLLA_PASSWORD=faaspass
+      - SCYLLA_HOST=scylla
+      - SCYLLA_TABLE=function_as_a_service_executions
+      - SCYLLA_PORT=8000
+      - SCYLLA_REGION=eu-central-1
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LOG_DEV_MODE=true

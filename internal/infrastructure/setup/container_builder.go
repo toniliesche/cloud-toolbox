@@ -21,6 +21,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/database/connectors"
 	"cloud-toolbox/internal/infrastructure/database/repositories/inmemory"
 	"cloud-toolbox/internal/infrastructure/database/repositories/redis"
+	"cloud-toolbox/internal/infrastructure/database/repositories/scylla"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
@@ -134,6 +135,22 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 		b.logger.Trace().
 			Msgf("[%s] Initializing `FunctionExecutionRepository` with redis backend", ContainerBuilderLogIdentifier)
 		if container.FunctionExecutionRepository, err = redis.NewFunctionExecutionRepository(container); err != nil {
+			return err
+		}
+	} else if b.faasConfig.StorageBackend == "scylla" {
+		b.logger.Trace().
+			Msgf("[%s] Retrieving ScyllaConfig from `FunctionAsAService` config", ContainerBuilderLogIdentifier)
+		container.ScyllaConfig = b.faasConfig.Scylla
+
+		b.logger.Trace().
+			Msgf("[%s] Initializing `Scylla` storage backend", ContainerBuilderLogIdentifier)
+		if container.Scylla, err = connectors.NewScylla(container); err != nil {
+			return err
+		}
+
+		b.logger.Trace().
+			Msgf("[%s] Initializing `FunctionExecutionRepository` with scylla backend", ContainerBuilderLogIdentifier)
+		if container.FunctionExecutionRepository, err = scylla.NewFunctionExecutionRepository(container); err != nil {
 			return err
 		}
 	} else {

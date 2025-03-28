@@ -19,6 +19,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
 	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
 	"context"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
@@ -28,12 +29,14 @@ type Container struct {
 	FunctionAsAServiceConfig    *config.FunctionAsAServiceConfig
 	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
 	FunctionAsAServiceService   faasinterfaces.FunctionAsAService
+	FunctionExecutionRepository interfaces.FunctionExecutionRepository
 	FunctionRegistry            faasinterfaces.FunctionRegistry
-	HttpServerConfig            *config.HttpServerConfig
 	HttpServer                  httpinterfaces.HttpServer
+	HttpServerConfig            *config.HttpServerConfig
 	Logger                      *zerolog.Logger
+	Redis                       *redis.Client
 	RedisConfig                 *config.RedisConfig
 	SystemConfig                *config.SystemConfig
-	Redis                       *redis.Client
-	FunctionExecutionRepository interfaces.FunctionExecutionRepository
+	Scylla                      *dynamodb.DynamoDB
+	ScyllaConfig                *config.ScyllaConfig
 }

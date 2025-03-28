@@ -1,3 +1,16 @@
+# MIT License
+# Copyright (c) 2025 Toni Liesche
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
 create-scylla-tables:
 	@echo "Checking if the Scylla container is running..."
 	@RETRY_LIMIT=10; \
@@ -35,15 +48,26 @@ create-scylla-tables:
 			-H 'X-Amz-Target: DynamoDB_20120810.DescribeTable' \
 			-d '{\"TableName\": \"$(TABLE_NAME_FAAS)\"}' | grep -q 'ResourceNotFoundException'; then \
 			echo 'Table does not exist, creating table \"$(TABLE_NAME_FAAS)\"...'; \
-			curl -s -f -o /dev/null -X POST http://$(SCYLLA_HOST):$(SCYLLA_PORT) \
+			curl -o /dev/null -s -f -X POST http://$(SCYLLA_HOST):$(SCYLLA_PORT) \
 			    -H 'Content-Type: application/json' \
 				-H 'X-Amz-Target: DynamoDB_20120810.CreateTable' \
 			    -d '{\
 			          \"TableName\": \"$(TABLE_NAME_FAAS)\", \
 			          \"KeySchema\": [{\"AttributeName\": \"id\", \"KeyType\": \"HASH\"}], \
 			          \"AttributeDefinitions\": [{\"AttributeName\": \"id\", \"AttributeType\": \"S\"}], \
-			          \"ProvisionedThroughput\": {\"ReadCapacityUnits\": 1, \"WriteCapacityUnits\": 1}\
-			     }'   && echo 'Error: Table creation request sent!' || echo 'Table creation request failed!'; \
+			          \"ProvisionedThroughput\": {\"ReadCapacityUnits\": 1, \"WriteCapacityUnits\": 1} \
+			     }'   && echo 'Success: Table creation request sent!' && \
+			curl -o /dev/null -s -f -X POST http://$(SCYLLA_HOST):$(SCYLLA_PORT) \
+            	-H 'Content-Type: application/json' \
+            	-H 'X-Amz-Target: DynamoDB_20120810.UpdateTimeToLive' \
+            	-d '{\
+                      \"TableName\": \"$(TABLE_NAME_FAAS)\", \
+    				  \"TimeToLiveSpecification\": { \
+        			  \"Enabled\": true, \
+        			  \"AttributeName\": \"ttl\" \
+    				} \
+                 }'   && echo 'Success: TTL enabled!' \
+            || echo 'Error: Table creation request failed!'; \
 		else \
 			echo 'Table \"$(TABLE_NAME_FAAS)\" already exists. Skipping table creation.'; \
 		fi"
