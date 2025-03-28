@@ -32,8 +32,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	container, err := setup.NewBuilder().
 		SetFaasConfig(cfg).
+		SetContext(ctx).
 		Build()
 
 	if err != nil {
@@ -54,13 +58,15 @@ func main() {
 	}()
 
 	<-stop
+	cancel()
 	logger.Info().Msg("Received shutdown signal, initiating shutdown")
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownCancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Fatal().Err(err).
+			Err(err).
 			Msg("failed to shutdown server")
 	}
 

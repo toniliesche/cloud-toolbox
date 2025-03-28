@@ -18,11 +18,13 @@ import (
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
 	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
+	"context"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
 
 type Container struct {
+	Context                     context.Context
 	FunctionAsAServiceConfig    *config.FunctionAsAServiceConfig
 	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
 	FunctionAsAServiceService   faasinterfaces.FunctionAsAService

@@ -25,6 +25,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
 	"cloud-toolbox/internal/infrastructure/log"
+	"context"
 	"fmt"
 	"github.com/rs/zerolog"
 )
@@ -35,6 +36,7 @@ type ContainerBuilder struct {
 	application string
 	faasConfig  *config.FunctionAsAServiceConfig
 	logger      *zerolog.Logger
+	context     context.Context
 }
 
 func (b *ContainerBuilder) SetFaasConfig(cfg *config.FunctionAsAServiceConfig) *ContainerBuilder {
@@ -49,7 +51,14 @@ func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 	b.logger.Info().
 		Msgf("[%s] Starting container setup", ContainerBuilderLogIdentifier)
 
+	if b.context == nil {
+		b.logger.Error().
+			Msgf("[%s] Context is not set", ContainerBuilderLogIdentifier)
+		return nil, b.logError(errors.NewContainerConfigMissingError())
+	}
+
 	container := &di.Container{}
+	container.Context = b.context
 
 	b.logger.Debug().
 		Msgf("[%s] Setting up logger", ContainerBuilderLogIdentifier)
@@ -211,6 +220,12 @@ func (b *ContainerBuilder) setupLogger(container *di.Container) errors.Applicati
 	}
 
 	return nil
+}
+
+func (b *ContainerBuilder) SetContext(ctx context.Context) *ContainerBuilder {
+	b.context = ctx
+
+	return b
 }
 
 func NewBuilder() *ContainerBuilder {

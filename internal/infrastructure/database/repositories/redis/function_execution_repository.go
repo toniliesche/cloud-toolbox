@@ -18,6 +18,7 @@ type FunctionExecutionRepository struct {
 	redis      *redis.Client
 	logger     *zerolog.Logger
 	timeToLive time.Duration
+	context    context.Context
 }
 
 func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.FunctionExecution, errors.ApplicationError) {
@@ -25,7 +26,7 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 		Str("executionId", executionId).
 		Msgf("[%s] Getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
-	fn := f.redis.JSONGet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$")
+	fn := f.redis.JSONGet(f.context, fmt.Sprintf("faas-%s", executionId), "$")
 	if fn.Err() != nil {
 		f.logger.Trace().
 			Err(fn.Err()).
@@ -72,7 +73,7 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 		Str("executionId", executionId).
 		Msgf("[%s] Saving error", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.error", fmt.Sprintf(`"%s"`, error))
+	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.error", fmt.Sprintf(`"%s"`, error))
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -82,7 +83,7 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 		return errors.NewGenericError(result.Err())
 	}
 
-	result = f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
+	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -96,7 +97,7 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 		Str("executionId", executionId).
 		Msgf("[%s] Error saved", FunctionExecutionRepositoryLogIdentifier)
 
-	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
+	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -106,7 +107,7 @@ func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExec
 		Str("executionId", function.Id).
 		Msgf("[%s] Saving function", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", function.Id), "$", function)
+	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", function.Id), "$", function)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -120,7 +121,7 @@ func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExec
 		Str("executionId", function.Id).
 		Msgf("[%s] Function saved", FunctionExecutionRepositoryLogIdentifier)
 
-	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", function.Id), f.timeToLive)
+	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", function.Id), f.timeToLive)
 
 	return nil
 }
@@ -141,7 +142,7 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 		output = fmt.Sprintf(`"%s"`, output)
 	}
 
-	result := f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.output", output)
+	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.output", output)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -151,7 +152,7 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 		return errors.NewGenericError(result.Err())
 	}
 
-	result = f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
+	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -164,7 +165,7 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 		Str("executionId", executionId).
 		Msgf("[%s] Output saved", FunctionExecutionRepositoryLogIdentifier)
 
-	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
+	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -177,7 +178,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 		Str("status", status).
 		Msgf("[%s] Updating status", FunctionExecutionRepositoryLogIdentifier)
 
-	result := f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
+	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.updated", timeObj)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -191,7 +192,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 		Status: status,
 		Time:   timeObj,
 	}
-	appendResult := f.redis.JSONArrAppend(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.status_updates", statusUpdate)
+	appendResult := f.redis.JSONArrAppend(f.context, fmt.Sprintf("faas-%s", executionId), "$.status_updates", statusUpdate)
 	if appendResult.Err() != nil {
 		f.logger.Trace().
 			Err(appendResult.Err()).
@@ -201,7 +202,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 		return errors.NewGenericError(appendResult.Err())
 	}
 
-	result = f.redis.JSONSet(context.Background(), fmt.Sprintf("faas-%s", executionId), "$.status", fmt.Sprintf(`"%s"`, status))
+	result = f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.status", fmt.Sprintf(`"%s"`, status))
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
@@ -215,7 +216,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 		Str("executionId", executionId).
 		Msgf("[%s] Status updated", FunctionExecutionRepositoryLogIdentifier)
 
-	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
+	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -223,6 +224,10 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 func NewFunctionExecutionRepository(container *di.Container) (*FunctionExecutionRepository, errors.ApplicationError) {
 	if container == nil {
 		return nil, errors.NewContainerMissingError("FunctionExecutionRepository")
+	}
+
+	if container.Context == nil {
+		return nil, errors.NewResolveDependencyError("FunctionExecutionRepository", "Context")
 	}
 
 	if container.Redis == nil {
@@ -242,6 +247,7 @@ func NewFunctionExecutionRepository(container *di.Container) (*FunctionExecution
 	}
 
 	return &FunctionExecutionRepository{
+		context:    container.Context,
 		redis:      container.Redis,
 		logger:     container.Logger,
 		timeToLive: time.Duration(container.FunctionAsAServiceConfig.StorageTtl) * time.Second,

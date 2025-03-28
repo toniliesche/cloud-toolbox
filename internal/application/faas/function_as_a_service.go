@@ -22,6 +22,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -36,6 +37,7 @@ type FunctionAsAService struct {
 	cfg      *config.FunctionAsAServiceConfig
 	logger   *zerolog.Logger
 	limiter  chan uint
+	context  context.Context
 }
 
 func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfaces.Response {
@@ -165,7 +167,7 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 		Str("execution-id", executionId).
 		Msgf("[%s] Creating function execution", FunctionAsAServiceLogIdentifier)
 
-	functionExecution, err := faasmodels.NewFunctionExecution(executionId, f.cfg.Command, f.cfg.ExecutionTimeout, string(recordsJson), f.logger)
+	functionExecution, err := faasmodels.NewFunctionExecution(executionId, f.cfg.Command, f.cfg.ExecutionTimeout, string(recordsJson), f.context, f.logger)
 	if err != nil {
 		f.logger.Error().
 			Err(err).
@@ -283,6 +285,10 @@ func NewFunctionAsAServiceService(container *di.Container) (faasinterfaces.Funct
 		return nil, domainerrors.NewContainerMissingError("FunctionAsAServiceService")
 	}
 
+	if container.Context == nil {
+		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "Context")
+	}
+
 	if container.FunctionAsAServiceConfig == nil {
 		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "FunctionAsAServiceConfig")
 	}
@@ -297,6 +303,7 @@ func NewFunctionAsAServiceService(container *di.Container) (faasinterfaces.Funct
 
 	return &FunctionAsAService{
 		registry: container.FunctionRegistry,
+		context:  container.Context,
 		cfg:      container.FunctionAsAServiceConfig,
 		logger:   container.Logger,
 		limiter:  make(chan uint, container.FunctionAsAServiceConfig.ParallelExecution),

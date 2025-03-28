@@ -330,6 +330,7 @@ func NewFunctionExecution(
 	command string,
 	timeout int64,
 	body string,
+	ctx context.Context,
 	logger *zerolog.Logger,
 ) (*FunctionExecution, infrastructureerrors.ApplicationError) {
 	args, err := shell.Fields(command, nil)
@@ -337,7 +338,7 @@ func NewFunctionExecution(
 		return nil, faaserrors.NewFaasCommandCouldNotBeParsedError(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	executionLogger := logger.With().Str("execution-id", id).Logger()
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
