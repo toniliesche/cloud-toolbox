@@ -25,6 +25,7 @@ type FunctionAsAServiceConfig struct {
 	HttpServer        *HttpServerConfig `yaml:"http"`
 	Redis             *RedisConfig      `yaml:"redis"`
 	StorageBackend    string            `json:"storage_backend"`
+	StorageTtl        int64             `json:"storage_ttl"`
 	Command           string            `yaml:"command"`
 	ParallelExecution int64             `yaml:"parallel_execution"`
 	ExecutionTimeout  int64             `yaml:"execution_timeout"`
@@ -61,6 +62,10 @@ func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 
 	if c.ExecutionTimeout > 900 {
 		return errors.NewConfigValueNeedsToBeLessThanOrEqualValueError("execution_timeout", 900)
+	}
+
+	if c.StorageTtl < 0 {
+		return errors.NewConfigValueNeedsToBeGreaterThanOrEqualValueError("storage_ttl", 0)
 	}
 
 	validBackends := []string{"inmemory", "redis"}
@@ -108,8 +113,10 @@ func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, errors.Applic
 
 func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
 	return &FunctionAsAServiceConfig{
-		HttpServer: getDefaultHttpServerConfig(),
-		Redis:      getDefaultRedisConfig(),
+		HttpServer:     getDefaultHttpServerConfig(),
+		Redis:          getDefaultRedisConfig(),
+		StorageBackend: "inmemory",
+		StorageTtl:     60,
 	}
 }
 
@@ -155,8 +162,9 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 
 	storageBackend := GetEnvironmentString("FUNCTION_AS_A_SERVICE_STORAGE_BACKEND", "")
 
-	if storageBackend == "" {
-		storageBackend = "inmemory"
+	storageTtl, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_STORAGE_TTL", 60)
+	if err != nil {
+		return nil, err
 	}
 
 	var redisConfig *RedisConfig
@@ -177,5 +185,6 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		ParallelExecution: parallelExecution,
 		ExecutionTimeout:  executionTimeout,
 		StorageBackend:    storageBackend,
+		StorageTtl:        storageTtl,
 	}, nil
 }

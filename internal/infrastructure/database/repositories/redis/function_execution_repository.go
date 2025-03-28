@@ -15,8 +15,9 @@ import (
 const FunctionExecutionRepositoryLogIdentifier = "FunctionExecutionRepository/Redis"
 
 type FunctionExecutionRepository struct {
-	redis  *redis.Client
-	logger *zerolog.Logger
+	redis      *redis.Client
+	logger     *zerolog.Logger
+	timeToLive time.Duration
 }
 
 func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.FunctionExecution, errors.ApplicationError) {
@@ -95,6 +96,8 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 		Str("executionId", executionId).
 		Msgf("[%s] Error saved", FunctionExecutionRepositoryLogIdentifier)
 
+	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
+
 	return nil
 }
 
@@ -116,6 +119,8 @@ func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExec
 	f.logger.Trace().
 		Str("executionId", function.Id).
 		Msgf("[%s] Function saved", FunctionExecutionRepositoryLogIdentifier)
+
+	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", function.Id), f.timeToLive)
 
 	return nil
 }
@@ -158,6 +163,8 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 	f.logger.Trace().
 		Str("executionId", executionId).
 		Msgf("[%s] Output saved", FunctionExecutionRepositoryLogIdentifier)
+
+	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
 
 	return nil
 }
@@ -208,6 +215,8 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 		Str("executionId", executionId).
 		Msgf("[%s] Status updated", FunctionExecutionRepositoryLogIdentifier)
 
+	f.redis.Expire(context.Background(), fmt.Sprintf("faas-%s", executionId), f.timeToLive)
+
 	return nil
 }
 
@@ -224,8 +233,17 @@ func NewFunctionExecutionRepository(container *di.Container) (*FunctionExecution
 		return nil, errors.NewResolveDependencyError("FunctionExecutionRepository", "Logger")
 	}
 
+	if container.FunctionAsAServiceConfig == nil {
+		return nil, errors.NewResolveDependencyError("FunctionExecutionRepository", "FunctionAsAServiceConfig")
+	}
+
+	if err := container.FunctionAsAServiceConfig.Validate(); err != nil {
+		return nil, errors.NewConfigValidationError(err)
+	}
+
 	return &FunctionExecutionRepository{
-		redis:  container.Redis,
-		logger: container.Logger,
+		redis:      container.Redis,
+		logger:     container.Logger,
+		timeToLive: time.Duration(container.FunctionAsAServiceConfig.StorageTtl) * time.Second,
 	}, nil
 }
