@@ -77,6 +77,7 @@ check-rabbitmq-vhost: check-rabbitmq
 		fi"
 
 create-rabbitmq-vhost: check-rabbitmq
+	echo "Creating RabbitMQ vHost \"$(RABBITMQ_VHOST)\"..."
 	echo "Checking if RabbitMQ vHost \"$(RABBITMQ_VHOST)\" already exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
 		if rabbitmqctl list_vhosts 2> /dev/null | grep -q -w '$(RABBITMQ_VHOST)'; then \
@@ -89,6 +90,7 @@ create-rabbitmq-vhost: check-rabbitmq
 		fi"
 
 delete-rabbitmq-vhost: check-rabbitmq
+	echo "Deleting RabbitMQ vHost \"$(RABBITMQ_VHOST)\"..."
 	echo "Checking if RabbitMQ vHost \"$(RABBITMQ_VHOST)\" exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
 		if rabbitmqctl list_vhosts 2> /dev/null | grep -q -w '$(RABBITMQ_VHOST)'; then \
@@ -98,18 +100,6 @@ delete-rabbitmq-vhost: check-rabbitmq
 			|| echo 'Error: Failed deleting RabbitMQ vHost \"$(RABBITMQ_VHOST)\"!'; \
 		else \
 			echo 'RabbitMQ vHost \"$(RABBITMQ_VHOST)\" does not exist, skipping vHost deletion.'; \
-		fi"
-
-create-rabbitmq-exchange: check-rabbitmq check-rabbitmq-vhost
-	echo "Checking if RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" already exists..."
-	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
-		if rabbitmqctl list_exchanges -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+'; then \
-			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does already exist, skipping exchange creation.'; \
-		else \
-			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist, running exchange creation now.'; \
-			rabbitmqadmin $(QUIET) declare exchange name=$(RABBITMQ_EXCHANGE) type=direct durable=true --vhost=$(RABBITMQ_VHOST) \
-			&& echo 'Success: Finished creating RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\".' \
-			|| echo 'Error: Failed creating RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\"!'; \
 		fi"
 
 check-rabbitmq-exchange: check-rabbitmq check-rabbitmq-vhost
@@ -122,7 +112,44 @@ check-rabbitmq-exchange: check-rabbitmq check-rabbitmq-vhost
 			exit 1; \
 		fi"
 
+create-rabbitmq-exchange: check-rabbitmq check-rabbitmq-vhost
+	echo "Creating RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\"..."
+	echo "Checking if RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" already exists..."
+	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
+		if rabbitmqctl list_exchanges -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+'; then \
+			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does already exist, skipping exchange creation.'; \
+		else \
+			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist, running exchange creation now.'; \
+			rabbitmqadmin $(QUIET) declare exchange name=$(RABBITMQ_EXCHANGE) type=direct durable=true --vhost=$(RABBITMQ_VHOST) \
+			&& echo 'Success: Finished creating RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\".' \
+			|| echo 'Error: Failed creating RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\"!'; \
+		fi"
+
+delete-rabbitmq-exchange: check-rabbitmq check-rabbitmq-vhost
+	echo "Deleting RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\"..."
+	echo "Checking if RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" exists..."
+	docker exec $(RABBITMQ_EXCHANGE) /bin/bash -c "\
+		if rabbitmqctl list_exchanges -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+'; then \
+			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does exist, running exchange deletion now.'; \
+			rabbitmqadmin $(QUIET) delete exchange name=$(RABBITMQ_EXCHANGE) --vhost=$(RABBITMQ_VHOST) \
+			&& echo 'Success: Finished deleting RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\".' \
+			|| echo 'Error: Failed deleting RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\"!'; \
+		else \
+			echo 'RabbitMQ Exchange \"$(RABBITMQ_EXCHANGE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist, skipping exchange deletion.'; \
+		fi"
+
+check-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
+	echo "Checking if RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" exists..."
+	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
+		if rabbitmqctl list_queues -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_QUEUE)[[:space:]]+'; then \
+			echo 'RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" does exist.'; \
+		else \
+			echo 'Error: RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist!'; \
+			exit 1; \
+		fi"
+
 create-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
+	echo "Creating RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\"..."
 	echo "Checking if RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" already exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
 		if rabbitmqctl list_queues -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_QUEUE)[[:space:]]+'; then \
@@ -139,16 +166,6 @@ create-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
 				|| echo 'Error: Failed creating RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\"!'; \
 		fi"
 
-check-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
-	echo "Checking if RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" exists..."
-	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
-		if rabbitmqctl list_queues -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_QUEUE)[[:space:]]+'; then \
-			echo 'RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" does exist.'; \
-		else \
-			echo 'Error: RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist!'; \
-			exit 1; \
-		fi"
-
 delete-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
 	echo "Deleting RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\"..."
 	echo "Checking if RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" exists..."
@@ -162,6 +179,32 @@ delete-rabbitmq-queue: check-rabbitmq check-rabbitmq-vhost
 			echo 'RabbitMQ Queue \"$(RABBITMQ_QUEUE)\" on vHost \"$(RABBITMQ_VHOST)\" does not exist, skipping queue deletion.'; \
 		fi"
 
+create-rabbitmq-binding: check-rabbitmq check-rabbitmq-vhost check-rabbitmq-queue check-rabbitmq-exchange
+	echo "Creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")..."
+	echo "Checking if RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") already exists..."
+	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
+		if rabbitmqctl list_bindings -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+exchange[[:space:]]+$(RABBITMQ_QUEUE)[[:space:]]+queue[[:space:]]+$(RABBITMQ_BINDING_KEY)[[:space:]]+'; then \
+			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does already exist, skipping binding creation.'; \
+		else \
+			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does not exist, running binding creation now.'; \
+			rabbitmqadmin $(QUIET) declare binding source=$(RABBITMQ_EXCHANGE) destination=$(RABBITMQ_QUEUE) routing_key=$(RABBITMQ_BINDING_KEY) --vhost=$(RABBITMQ_VHOST) \
+			&& echo 'Success: Finished creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\").' \
+			|| echo 'Error: Failed creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")!'; \
+		fi"
+
+delete-rabbitmq-binding: check-rabbitmq check-rabbitmq-vhost
+	echo "Deleting RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")..."
+	echo "Checking if RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") exists..."
+	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
+		if rabbitmqctl list_bindings -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+exchange[[:space:]]+$(RABBITMQ_QUEUE)[[:space:]]+queue[[:space:]]+$(RABBITMQ_BINDING_KEY)[[:space:]]+'; then \
+			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does exist, running binding deletion now.'; \
+			rabbitmqadmin $(QUIET) delete binding source=$(RABBITMQ_EXCHANGE) destination=$(RABBITMQ_QUEUE) routing_key=$(RABBITMQ_BINDING_KEY) --vhost=$(RABBITMQ_VHOST) \
+			&& echo 'Success: Finished deleting RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\").' \
+			|| echo 'Error: Failed deleting RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")!'; \
+		else \
+			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does not exist, skipping binding deletion.'; \
+		fi"
+
 check-rabbitmq-user: check-rabbitmq
 	echo "Checking if RabbitMQ User "$(RABBITMQ_USER)" exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "rabbitmqctl list_users 2> /dev/null | grep -q -w '$(RABBITMQ_USER)'; \
@@ -173,7 +216,7 @@ check-rabbitmq-user: check-rabbitmq
 		fi"
 
 create-rabbitmq-user: check-rabbitmq
-	echo "Creating RabbitMQ User \"$(RABBITMQ_USER)\"."
+	echo "Creating RabbitMQ User \"$(RABBITMQ_USER)\"..."
 	echo "Checking if RabbitMQ User \"$(RABBITMQ_USER)\" already exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
 		if rabbitmqctl list_users 2> /dev/null | grep -q -w '$(RABBITMQ_USER)'; then \
@@ -185,21 +228,8 @@ create-rabbitmq-user: check-rabbitmq
 			|| echo 'Error: Failed creating RabbitMQ User \"$(RABBITMQ_USER)\"!'; \
 		fi"
 
-create-rabbitmq-binding: check-rabbitmq check-rabbitmq-vhost check-rabbitmq-queue check-rabbitmq-exchange
-	echo "Creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")..."
-	echo "Checking if RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") already exists..."
-	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
-		if rabbitmqctl list_bindings -p $(RABBITMQ_VHOST) 2> /dev/null | grep -q -E '$(RABBITMQ_EXCHANGE)[[:space:]]+$(RABBITMQ_QUEUE)[[:space:]]+$(RABBITMQ_BINDING_KEY)[[:space:]]+'; then \
-			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does already exist, skipping binding creation.'; \
-		else \
-			echo 'RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\") does not exist, running binding creation now.'; \
-			rabbitmqadmin $(QUIET) declare binding source=$(RABBITMQ_EXCHANGE) destination=$(RABBITMQ_QUEUE) routing_key=$(RABBITMQ_BINDING_KEY) --vhost=$(RABBITMQ_VHOST) \
-			&& echo 'Success: Finished creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\").' \
-			|| echo 'Error: Failed creating RabbitMQ Binding from Exchange \"$(RABBITMQ_EXCHANGE)\" to Queue \"$(RABBITMQ_QUEUE)\" (Topic: \"$(RABBITMQ_BINDING_KEY)\")!'; \
-		fi"
-
 delete-rabbitmq-user: check-rabbitmq
-	echo "Deleting RabbitMQ User \"$(RABBITMQ_USER)\"."
+	echo "Deleting RabbitMQ User \"$(RABBITMQ_USER)\"..."
 	echo "Checking if RabbitMQ User \"$(RABBITMQ_USER)\" exists..."
 	docker exec $(RABBITMQ_CONTAINER) /bin/bash -c "\
 		if rabbitmqctl list_users 2> /dev/null | grep -q -w '$(RABBITMQ_USER)'; then \

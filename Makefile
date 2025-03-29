@@ -103,6 +103,9 @@ build-docker-%: set-version-%
 build-dev-docker-faas:
 	$(MAKE) build-dev-docker-function-as-a-service
 
+build-dev-docker-ft:
+	$(MAKE) build-dev-docker-function-trigger
+
 build-dev-docker-%:
 	$(call print_message,Building development Docker image for "$*")
 
@@ -138,7 +141,7 @@ down-test:
 
 	docker compose --env-file .env -f docker/docker-compose.yml -p test down --volumes
 
-up-test: up-docker setup-rabbitmq setup-faas setup-ft
+up-test: up-docker
 
 up-docker:
 	$(call print_message,Starting Docker containers)

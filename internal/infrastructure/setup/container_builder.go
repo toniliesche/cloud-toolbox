@@ -14,17 +14,10 @@
 package setup
 
 import (
-	"cloud-toolbox/internal/application/faas"
-	"cloud-toolbox/internal/application/faas/services"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/config/interfaces"
-	"cloud-toolbox/internal/infrastructure/database/connectors"
-	"cloud-toolbox/internal/infrastructure/database/repositories/inmemory"
-	"cloud-toolbox/internal/infrastructure/database/repositories/redis"
-	"cloud-toolbox/internal/infrastructure/database/repositories/scylla"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
-	"cloud-toolbox/internal/infrastructure/http"
 	"cloud-toolbox/internal/infrastructure/log"
 	"context"
 	"fmt"
@@ -36,6 +29,7 @@ const ContainerBuilderLogIdentifier = "ContainerBuilder"
 type ContainerBuilder struct {
 	application string
 	faasConfig  *config.FunctionAsAServiceConfig
+	ftConfig    *config.FunctionTriggerConfig
 	logger      *zerolog.Logger
 	context     context.Context
 }
@@ -43,6 +37,13 @@ type ContainerBuilder struct {
 func (b *ContainerBuilder) SetFaasConfig(cfg *config.FunctionAsAServiceConfig) *ContainerBuilder {
 	b.faasConfig = cfg
 	b.application = "faas"
+
+	return b
+}
+
+func (b *ContainerBuilder) SetFtConfig(cfg *config.FunctionTriggerConfig) *ContainerBuilder {
+	b.ftConfig = cfg
+	b.application = "ft"
 
 	return b
 }
@@ -78,6 +79,14 @@ func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 		}
 		b.logger.Debug().
 			Msgf("[%s] `FunctionAsAService` component setup complete", ContainerBuilderLogIdentifier)
+	case "ft":
+		b.logger.Debug().
+			Msgf("[%s] Setting up `FunctionTrigger` components", ContainerBuilderLogIdentifier)
+		if err := b.setupFt(container); err != nil {
+			return nil, b.logError(errors.NewApplicationSetupError("Function Trigger", err))
+		}
+		b.logger.Debug().
+			Msgf("[%s] `FunctionTrigger` component setup complete", ContainerBuilderLogIdentifier)
 	default:
 		return nil, b.logError(errors.NewApplicationSetupError("Generic", fmt.Errorf("no application config provided")))
 	}
@@ -104,104 +113,12 @@ func (b *ContainerBuilder) logError(err errors.ApplicationError) errors.Applicat
 	return err
 }
 
-func (b *ContainerBuilder) setupBasics(container *di.Container) errors.ApplicationError {
-
-	return nil
-}
-
-func (b *ContainerBuilder) setupFaas(container *di.Container) errors.ApplicationError {
-	var err errors.ApplicationError
-
-	if b.faasConfig == nil {
-		return errors.NewResolveDependencyError("Function as a Service", "faasConfig")
-	}
-
-	if err = b.faasConfig.Validate(); err != nil {
-		return errors.NewApplicationSetupError("Function as a Service", err)
-	}
-	container.FunctionAsAServiceConfig = b.faasConfig
-
-	if b.faasConfig.StorageBackend == "redis" {
-		b.logger.Trace().
-			Msgf("[%s] Retrieving RedisConfig from `FunctionAsAService` config", ContainerBuilderLogIdentifier)
-		container.RedisConfig = b.faasConfig.Redis
-
-		b.logger.Trace().
-			Msgf("[%s] Initializing `Redis` storage backend", ContainerBuilderLogIdentifier)
-		if container.Redis, err = connectors.NewRedis(container); err != nil {
-			return err
-		}
-
-		b.logger.Trace().
-			Msgf("[%s] Initializing `FunctionExecutionRepository` with redis backend", ContainerBuilderLogIdentifier)
-		if container.FunctionExecutionRepository, err = redis.NewFunctionExecutionRepository(container); err != nil {
-			return err
-		}
-	} else if b.faasConfig.StorageBackend == "scylla" {
-		b.logger.Trace().
-			Msgf("[%s] Retrieving ScyllaConfig from `FunctionAsAService` config", ContainerBuilderLogIdentifier)
-		container.ScyllaConfig = b.faasConfig.Scylla
-
-		b.logger.Trace().
-			Msgf("[%s] Initializing `Scylla` storage backend", ContainerBuilderLogIdentifier)
-		if container.Scylla, err = connectors.NewScylla(container); err != nil {
-			return err
-		}
-
-		b.logger.Trace().
-			Msgf("[%s] Initializing `FunctionExecutionRepository` with scylla backend", ContainerBuilderLogIdentifier)
-		if container.FunctionExecutionRepository, err = scylla.NewFunctionExecutionRepository(container); err != nil {
-			return err
-		}
-	} else {
-		b.logger.Trace().
-			Msgf("[%s] Initializing `FunctionExecutionRepository` with storage backend", ContainerBuilderLogIdentifier)
-		if container.FunctionExecutionRepository, err = inmemory.NewFunctionExecutionRepository(container); err != nil {
-			return err
-		}
-	}
-
-	b.logger.Trace().
-		Msgf("[%s] Initializing `FunctionAsAService` registry", ContainerBuilderLogIdentifier)
-	if container.FunctionRegistry, err = services.NewFunctionRegistry(container); err != nil {
-		return err
-	}
-
-	b.logger.Trace().
-		Msgf("[%s] Initializing `FunctionAsAService` service", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceService, err = faas.NewFunctionAsAServiceService(container); err != nil {
-		return err
-	}
-
-	b.logger.Trace().
-		Msgf("[%s] Retrieving HttpServerConfig from `FunctionAsAService` config", ContainerBuilderLogIdentifier)
-	container.HttpServerConfig = b.faasConfig.HttpServer
-
-	b.logger.Trace().
-		Msgf("[%s] Initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceHandler, err = http.NewFunctionAsAServiceHandler(container); err != nil {
-		return err
-	}
-
-	b.logger.Trace().
-		Msgf("[%s] Initializing `HttpServer`", ContainerBuilderLogIdentifier)
-	if container.HttpServer, err = http.NewServer(container); err != nil {
-		return err
-	}
-
-	b.logger.Trace().
-		Msgf("[%s] Registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if err = container.HttpServer.RegisterRoutes(container.FunctionAsAServiceHandler); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (b *ContainerBuilder) getApplicationConfig() (interfaces.ApplicationConfig, errors.ApplicationError) {
 	switch b.application {
 	case "faas":
 		return b.faasConfig, nil
+	case "ft":
+		return b.ftConfig, nil
 	default:
 		return nil, errors.NewContainerConfigMissingError()
 	}
@@ -211,32 +128,11 @@ func (b *ContainerBuilder) getComponentType() string {
 	switch b.application {
 	case "faas":
 		return "function-as-a-service"
+	case "ft":
+		return "function-trigger"
 	default:
 		return "unknown"
 	}
-}
-
-func (b *ContainerBuilder) setupLogger(container *di.Container) errors.ApplicationError {
-	var err errors.ApplicationError
-
-	applicationConfig, err := b.getApplicationConfig()
-	if err != nil {
-		return errors.NewResolveDependencyError("Generic", "applicationConfig")
-	}
-
-	container.SystemConfig = applicationConfig.GetSystemConfig()
-	container.SystemConfig.ComponentType = b.getComponentType()
-
-	if err = container.SystemConfig.Validate("system"); err != nil {
-		return errors.NewApplicationSetupError("Generic", err)
-	}
-
-	container.Logger, err = log.NewLogger(container)
-	if err != nil {
-		return errors.NewApplicationSetupError("Generic", err)
-	}
-
-	return nil
 }
 
 func (b *ContainerBuilder) SetContext(ctx context.Context) *ContainerBuilder {

@@ -149,6 +149,11 @@ func getFunctionAsAServiceConfigFromFile(file string) (*FunctionAsAServiceConfig
 }
 
 func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, errors.ApplicationError) {
+	systemConfig, err := getSystemConfigFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
 	command := GetEnvironmentString("FUNCTION_AS_A_SERVICE_COMMAND", "")
 	if command == "" {
 		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_COMMAND")
@@ -165,11 +170,6 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 	}
 
 	httpConfig, err := getHttpServerConfigFromEnvironment()
-	if err != nil {
-		return nil, err
-	}
-
-	systemConfig, err := getSystemConfigFromEnvironment()
 	if err != nil {
 		return nil, err
 	}

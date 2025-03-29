@@ -33,3 +33,10 @@ func NewInvalidBooleanEnvironmentVariableError(variable string, value string) Ap
 		code:    ErrorCodeEnvironmentVariableMustBeBoolean,
 	}
 }
+
+func NewMalformedEnvironmentVariableError(variable string, value string, regexp string) ApplicationError {
+	return InfrastructureError{
+		message: "environment variable `" + variable + "` must match the regexp `" + regexp + "`, got `" + value + "`",
+		code:    ErrorCodeEnvironmentVariableMalformed,
+	}
+}

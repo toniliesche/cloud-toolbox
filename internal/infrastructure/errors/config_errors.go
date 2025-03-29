@@ -57,6 +57,13 @@ func NewMissingConfigValueError(field string) ApplicationError {
 	}
 }
 
+func NewEmptyListConfigValueError(field string) ApplicationError {
+	return InfrastructureError{
+		message: "config value `" + field + "` must not be an empty list",
+		code:    ErrorCodeConfigValueEmptyList,
+	}
+}
+
 func NewMissingConfigSectionError(section string) ApplicationError {
 	return InfrastructureError{
 		message: "config section `" + section + "` must exist",

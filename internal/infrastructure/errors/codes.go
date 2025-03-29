@@ -22,6 +22,7 @@ const (
 	ErrorCodeEnvironmentVariableMissing          = 10000
 	ErrorCodeEnvironmentVariableMustBeInteger    = 10001
 	ErrorCodeEnvironmentVariableMustBeBoolean    = 10002
+	ErrorCodeEnvironmentVariableMalformed        = 10003
 	ErrorCodeConfigValueMissing                  = 10100
 	ErrorCodeConfigSectionMissing                = 10101
 	ErrorCodeConfigSectionInvalid                = 10102
@@ -29,6 +30,7 @@ const (
 	ErrorCodeConfigValueMustBeGreaterThanOrEqual = 10104
 	ErrorCodeConfigValueMustBeLessThanOrEqual    = 10105
 	ErrorCodeConfigValueInvalid                  = 10106
+	ErrorCodeConfigValueEmptyList                = 10107
 	ErrorCodeContainerConfigMissing              = 10200
 	ErrorCodeContainerMissingDependency          = 10201
 	ErrorCodeContainerInvalidConfig              = 10202

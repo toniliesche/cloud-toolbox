@@ -30,6 +30,7 @@ type Container struct {
 	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
 	FunctionAsAServiceService   faasinterfaces.FunctionAsAService
 	FunctionExecutionRepository interfaces.FunctionExecutionRepository
+	FunctionTriggerConfig       *config.FunctionTriggerConfig
 	FunctionRegistry            faasinterfaces.FunctionRegistry
 	HttpServer                  httpinterfaces.HttpServer
 	HttpServerConfig            *config.HttpServerConfig
