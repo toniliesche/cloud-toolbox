@@ -12,7 +12,7 @@
 # copies or substantial portions of the Software.
 
 increase-%: update-% write-properties
-	@echo updated build.properties file
+	echo updated build.properties file
 
 set-commit:
 	$(eval run.commit := $(shell git rev-parse --short HEAD))
@@ -35,39 +35,39 @@ tag-git-%: set-version-%
 	git push origin $(run.build.version)
 
 update-major:
-	@$(eval build.version.major := $(shell echo $$(($(build.version.major) + 1))))
-	@$(eval build.version.minor := 0)
-	@$(eval build.version.bugfix := 0)
-	@$(eval build.version.candidate := 1)
-	@$(eval build.version.patch := 1)
-	@echo new major version: ${build.version.major}
+	$(eval build.version.major := $(shell echo $$(($(build.version.major) + 1))))
+	$(eval build.version.minor := 0)
+	$(eval build.version.bugfix := 0)
+	$(eval build.version.candidate := 1)
+	$(eval build.version.patch := 1)
+	echo new major version: ${build.version.major}
 
 update-minor:
-	@$(eval build.version.minor := $(shell echo $$(($(build.version.minor) + 1))))
-	@$(eval build.version.bugfix := 0)
-	@$(eval build.version.candidate := 1)
-	@$(eval build.version.patch := 1)
-	@echo new minor version: ${build.version.minor}
+	$(eval build.version.minor := $(shell echo $$(($(build.version.minor) + 1))))
+	$(eval build.version.bugfix := 0)
+	$(eval build.version.candidate := 1)
+	$(eval build.version.patch := 1)
+	echo new minor version: ${build.version.minor}
 
 update-bugfix:
-	@$(eval build.version.bugfix := $(shell echo $$(($(build.version.bugfix) + 1))))
-	@$(eval build.version.candidate := 1)
-	@$(eval build.version.patch := 1)
-	@echo new bugfix version: ${build.version.bugfix}
+	$(eval build.version.bugfix := $(shell echo $$(($(build.version.bugfix) + 1))))
+	$(eval build.version.candidate := 1)
+	$(eval build.version.patch := 1)
+	echo new bugfix version: ${build.version.bugfix}
 
 update-rc:
-	@$(eval build.version.candidate := $(shell echo $$(($(build.version.candidate) + 1))))
-	@echo new rc version: ${build.version.candidate}
+	$(eval build.version.candidate := $(shell echo $$(($(build.version.candidate) + 1))))
+	echo new rc version: ${build.version.candidate}
 
 update-patch:
-	@$(eval build.version.patch := $(shell echo $$(($(build.version.patch) + 1))))
-	@echo new patch version: ${build.version.patch}
+	$(eval build.version.patch := $(shell echo $$(($(build.version.patch) + 1))))
+	echo new patch version: ${build.version.patch}
 
 write-properties:
-	@echo "build.version.major=${build.version.major}" > build.properties.tmp
-	@echo "build.version.minor=${build.version.minor}" >> build.properties.tmp
-	@echo "build.version.bugfix=${build.version.bugfix}" >> build.properties.tmp
-	@echo "build.version.candidate=${build.version.candidate}" >> build.properties.tmp
-	@echo "build.version.patch=${build.version.patch}" >> build.properties.tmp
-	@rm build.properties
-	@mv build.properties.tmp build.properties
+	echo "build.version.major=${build.version.major}" > build.properties.tmp
+	echo "build.version.minor=${build.version.minor}" >> build.properties.tmp
+	echo "build.version.bugfix=${build.version.bugfix}" >> build.properties.tmp
+	echo "build.version.candidate=${build.version.candidate}" >> build.properties.tmp
+	echo "build.version.patch=${build.version.patch}" >> build.properties.tmp
+	rm build.properties
+	mv build.properties.tmp build.properties

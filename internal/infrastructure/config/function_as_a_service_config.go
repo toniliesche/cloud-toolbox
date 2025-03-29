@@ -154,7 +154,7 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_COMMAND")
 	}
 
-	parallelExecution, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION", 10)
+	parallelExecution, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION_LIMIT", 10)
 	if err != nil {
 		return nil, err
 	}

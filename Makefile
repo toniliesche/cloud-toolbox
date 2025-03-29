@@ -11,27 +11,32 @@
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 
+MAKEFLAGS += --no-print-directory -s
+
 ifneq ("$(wildcard $(CURDIR)/build.properties)","")
 	include $(CURDIR)/build.properties
 endif
 
+ifneq ("$(wildcard $(CURDIR)/.env)","")
+	include $(CURDIR)/.env
+endif
+
+include $(CURDIR)/make/functions.mk
+include $(CURDIR)/make/faas.mk
+include $(CURDIR)/make/ft.mk
 include $(CURDIR)/make/rabbitmq.mk
 include $(CURDIR)/make/scylladb.mk
 include $(CURDIR)/make/versioning.mk
 
-RABBITMQ_CONTAINER=test-rabbitmq-1
-RABBITMQ_USER=admin
-RABBITMQ_PASSWORD=admin
-SCYLLA_CONTAINER=test-scylla-1
-SCYLLA_HOST=test-scylla-1
-SCYLLA_PORT=8000
-TABLE_NAME_FAAS=function_as_a_service_executions
-
-PROJECTS=function-as-a-service
-DEBIANVER=bookworm
-GOLANGVER=1.24.1
-
 build-docker-rc-%: set-version-rc set-commit
+	$(call print_message,Building release candidate Docker image for "$*")
+
+	echo "Build version: $(run.build.version)"
+	echo "Build commit: $(run.commit)"
+	echo "Golang version: $(GOLANGVER)"
+	echo "Debian version: $(DEBIANVER)"
+	echo
+
 	docker buildx build \
 		--pull \
 		--platform linux/amd64,linux/arm64 \
@@ -45,6 +50,14 @@ build-docker-rc-%: set-version-rc set-commit
  		docker/$*
 
 build-docker-patch-%: set-version-patch set-commit
+	$(call print_message,Building patch Docker image for "$*")
+
+	echo "Build version: $(run.build.version)"
+	echo "Build commit: $(run.commit)"
+	echo "Golang version: $(GOLANGVER)"
+	echo "Debian version: $(DEBIANVER)"
+	echo
+
 	docker buildx build \
 		--pull \
 		--platform linux/amd64,linux/arm64 \
@@ -61,6 +74,14 @@ build-docker-patch-%: set-version-patch set-commit
 		docker/$*
 
 build-docker-release-%: set-version-release set-commit
+	$(call print_message,Building release Docker image for "$*")
+
+	echo "Build version: $(run.build.version)"
+	echo "Build commit: $(run.commit)"
+	echo "Golang version: $(GOLANGVER)"
+	echo "Debian version: $(DEBIANVER)"
+	echo
+
 	docker buildx build \
 		--pull \
 		--platform linux/amd64,linux/arm64 \
@@ -83,6 +104,14 @@ build-dev-docker-faas:
 	$(MAKE) build-dev-docker-function-as-a-service
 
 build-dev-docker-%:
+	$(call print_message,Building development Docker image for "$*")
+
+	echo "Build version: develop"
+	echo "Build commit: develop"
+	echo "Golang version: $(GOLANGVER)"
+	echo "Debian version: $(DEBIANVER)"
+	echo
+
 	docker build \
 		--pull \
 		--build-arg CACHEBUST=$(shell date +%s) \
@@ -105,9 +134,13 @@ build:
 	$(foreach project, $(PROJECTS), $(MAKE) build-$(project);)
 
 down-test:
-	docker compose -f docker/docker-compose.yml -p test down --volumes
+	$(call print_message,Stopping Docker containers)
 
-up-test: up-docker create-scylla-tables
+	docker compose --env-file .env -f docker/docker-compose.yml -p test down --volumes
+
+up-test: up-docker setup-rabbitmq setup-faas setup-ft
 
 up-docker:
-	docker compose -f docker/docker-compose.yml -p test up -d --remove-orphans
+	$(call print_message,Starting Docker containers)
+
+	docker compose --env-file .env -f docker/docker-compose.yml -p test up -d --remove-orphans

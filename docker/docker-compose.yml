@@ -20,20 +20,20 @@ services:
     environment:
       - CLOUD_TOOLBOX_COMPONENT_ID=hello-world-faas
       - FUNCTION_AS_A_SERVICE_COMMAND=/usr/local/bin/hello-world-faas
-      - FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION=2
-      - FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT=10
-      - FUNCTION_AS_A_SERVICE_STORAGE_BACKEND=redis
-      - FUNCTION_AS_A_SERVICE_STORAGE_TTL=10
-      - SCYLLA_USERNAME=faas
-      - SCYLLA_PASSWORD=faaspass
-      - SCYLLA_HOST=scylla
-      - SCYLLA_TABLE=function_as_a_service_executions
-      - SCYLLA_PORT=8000
-      - SCYLLA_REGION=eu-central-1
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - LOG_DEV_MODE=true
-      - LOG_LEVEL=trace
+      - FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION_LIMIT=${FAAS_PARALLEL_EXECUTION_LIMIT}
+      - FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT=${FAAS_EXECUTION_TIMEOUT}
+      - FUNCTION_AS_A_SERVICE_STORAGE_BACKEND=${FAAS_STORAGE_BACKEND}
+      - FUNCTION_AS_A_SERVICE_STORAGE_TTL=${FAAS_STORAGE_TTL}
+      - SCYLLA_USERNAME=${FAAS_STORAGE_USERNAME}
+      - SCYLLA_PASSWORD=${FAAS_STORAGE_PASSWORD}
+      - SCYLLA_HOST=${SCYLLA_HOST}
+      - SCYLLA_TABLE=${FAAS_STORAGE_TABLE_SCYLLA}
+      - SCYLLA_PORT=${SCYLLA_PORT}
+      - SCYLLA_REGION=${SCYLLA_REGION}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_DEV_MODE=${LOG_DEV_MODE}
+      - LOG_LEVEL=${LOG_LEVEL}
       - LOG_PATH=/dev/stdout
 
   rabbitmq:
@@ -49,17 +49,46 @@ services:
     image: redis:8.0-M04-alpine
     hostname: redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:2.66
+    hostname: redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:5.1.3
+    hostname: dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://${SCYLLA_HOST}:${SCYLLA_PORT}
+      - AWS_REGION=${SCYLLA_REGION}
+      - AWS_ACCESS_KEY_ID=${SCYLLA_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${SCYLLA_SECRET_ACCESS_KEY}
+    depends_on:
+      - scylla
 
   scylla:
     image: scylladb/scylla:6.2
     hostname: scylla
     ports:
       - "9042:9042"
-      - "8000:8000"
-    command: ["--alternator-address", "0.0.0.0", "--alternator-port", "8000", "--alternator-write-isolation", "always"]
+      - "${SCYLLA_PORT}:${SCYLLA_PORT}"
+    command: [
+            "--alternator-address", "0.0.0.0",
+            "--alternator-ttl-period-in-seconds ", "5",
+            "--alternator-port", "${SCYLLA_PORT}",
+            "--alternator-write-isolation",
+            "always"
+        ]
     volumes:
       - scylla_data:/var/lib/scylla
 
@@ -67,6 +96,8 @@ volumes:
   rabbitmq_data:
     driver: local
   redis_data:
+    driver: local
+  redisinsight_data:
     driver: local
   scylla_data:
     driver: local
