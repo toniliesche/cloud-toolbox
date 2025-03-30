@@ -41,6 +41,11 @@ func GetEnvironmentInt(key string, defaultValue int64) (int64, errors.Applicatio
 	return intValue, nil
 }
 
+func HasEnvironment(key string) bool {
+	value := os.Getenv(key)
+	return value != ""
+}
+
 func GetEnvironmentBool(key string, defaultValue bool) (bool, errors.ApplicationError) {
 	value := os.Getenv(key)
 	if value == "" {

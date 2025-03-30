@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestHttpServerConfigFailsOnEmptyHost(t *testing.T) {
+func TestValidateHttpServerConfigFailsOnEmptyHost(t *testing.T) {
 	cfg := getValidHttpServerConfig()
 	cfg.Host = ""
 
@@ -33,7 +33,7 @@ func TestHttpServerConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
-func TestHttpServerConfigFailsOnZeroPort(t *testing.T) {
+func TestValidateHttpServerConfigFailsOnZeroPort(t *testing.T) {
 	cfg := getValidHttpServerConfig()
 	cfg.Port = 0
 
@@ -47,7 +47,7 @@ func TestHttpServerConfigFailsOnZeroPort(t *testing.T) {
 	}
 }
 
-func TestHttpServerConfigFailsOnNegativePort(t *testing.T) {
+func TestValidateHttpServerConfigFailsOnNegativePort(t *testing.T) {
 	cfg := getValidHttpServerConfig()
 	cfg.Port = -1
 
@@ -56,12 +56,12 @@ func TestHttpServerConfigFailsOnNegativePort(t *testing.T) {
 		return
 	}
 
-	if !assert.Equal(t, "config value `http.port` must be greater than 0", err.Error(), "unexpected error message") {
+	if !assert.Equal(t, "config value `http.port` must be greater than `0`", err.Error(), "unexpected error message") {
 		return
 	}
 }
 
-func TestHttpServerConfigSucceedsOnValidConfig(t *testing.T) {
+func TestValidateHttpServerConfigSucceedsOnValidConfig(t *testing.T) {
 	cfg := getValidHttpServerConfig()
 
 	err := cfg.Validate("http")

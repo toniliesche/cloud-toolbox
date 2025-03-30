@@ -25,7 +25,7 @@ import (
 	"net/http"
 )
 
-const ServerLogIdentifier = "Server"
+const ServerLogIdentifier = "HttpServer"
 
 type Server struct {
 	cfg    *config.HttpServerConfig
@@ -103,19 +103,19 @@ func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) errors.Applicati
 
 func NewServer(container *di.Container) (*Server, errors.ApplicationError) {
 	if container == nil {
-		return nil, errors.NewContainerMissingError("HttpServer")
+		return nil, errors.NewContainerMissingError(ServerLogIdentifier)
 	}
 
 	if container.HttpServerConfig == nil {
-		return nil, errors.NewResolveDependencyError("HttpServer", "HttpServerConfig")
+		return nil, errors.NewResolveDependencyError(ServerLogIdentifier, "HttpServerConfig")
 	}
 
 	if err := container.HttpServerConfig.Validate("http"); err != nil {
-		return nil, errors.NewInvalidConfigError("HttpServerConfig", err)
+		return nil, errors.NewInvalidConfigError(ServerLogIdentifier, err)
 	}
 
 	if container.Logger == nil {
-		return nil, errors.NewResolveDependencyError("HttpServer", "Logger")
+		return nil, errors.NewResolveDependencyError(ServerLogIdentifier, "Logger")
 	}
 
 	router := mux.NewRouter()

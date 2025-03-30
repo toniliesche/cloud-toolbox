@@ -45,7 +45,7 @@ func NewConfigFileParsingError(err error) ApplicationError {
 
 func NewConfigValueNeedsToBeGreaterZeroError(field string) ApplicationError {
 	return InfrastructureError{
-		message: "config value `" + field + "` must be greater than 0",
+		message: "config value `" + field + "` must be greater than `0`",
 		code:    ErrorCodeConfigValueMustBeGreaterThanZero,
 	}
 }
@@ -61,6 +61,13 @@ func NewEmptyListConfigValueError(field string) ApplicationError {
 	return InfrastructureError{
 		message: "config value `" + field + "` must not be an empty list",
 		code:    ErrorCodeConfigValueEmptyList,
+	}
+}
+
+func NewMissingListConfigValueError(field string, id string) ApplicationError {
+	return InfrastructureError{
+		message: "config value `" + field + "` does not have an entry with id `" + id + "`",
+		code:    ErrorCodeConfigValueMissingListEntry,
 	}
 }
 
@@ -94,7 +101,7 @@ func NewConfigValueNeedsToBeLessThanOrEqualValueError(field string, value int) A
 
 func NewInvalidConfigValueError(field string, allowedValues []string, value string) ApplicationError {
 	return InfrastructureError{
-		message: fmt.Sprintf("config value `%s` must be one of `%v`, but is `%s`", field, allowedValues, value),
+		message: fmt.Sprintf("config value `%s` must be one of %v, but is `%s`", field, allowedValues, value),
 		code:    ErrorCodeConfigValueInvalid,
 	}
 }

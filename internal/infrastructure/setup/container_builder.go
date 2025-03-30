@@ -75,6 +75,9 @@ func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 		b.logger.Debug().
 			Msgf("[%s] Setting up `FunctionAsAService` components", ContainerBuilderLogIdentifier)
 		if err := b.setupFaas(container); err != nil {
+			b.logger.Trace().
+				Err(err).
+				Msgf("[%s] Error during setup of `FunctionAsAService` components", ContainerBuilderLogIdentifier)
 			return nil, b.logError(errors.NewApplicationSetupError("Function as a Service", err))
 		}
 		b.logger.Debug().
@@ -83,17 +86,25 @@ func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 		b.logger.Debug().
 			Msgf("[%s] Setting up `FunctionTrigger` components", ContainerBuilderLogIdentifier)
 		if err := b.setupFt(container); err != nil {
+			b.logger.Trace().
+				Err(err).
+				Msgf("[%s] Error during setup of `FunctionTrigger` components", ContainerBuilderLogIdentifier)
 			return nil, b.logError(errors.NewApplicationSetupError("Function Trigger", err))
 		}
 		b.logger.Debug().
 			Msgf("[%s] `FunctionTrigger` component setup complete", ContainerBuilderLogIdentifier)
 	default:
+		b.logger.Trace().
+			Msgf("[%s] Unknown application type: %s", ContainerBuilderLogIdentifier, b.application)
 		return nil, b.logError(errors.NewApplicationSetupError("Generic", fmt.Errorf("no application config provided")))
 	}
 
 	b.logger.Debug().
 		Msgf("[%s] Setting up basic components", ContainerBuilderLogIdentifier)
 	if err := b.setupBasics(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error during setup of basic components", ContainerBuilderLogIdentifier)
 		return nil, b.logError(errors.NewApplicationSetupError("Generic", err))
 	}
 	b.logger.Debug().

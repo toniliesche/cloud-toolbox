@@ -25,12 +25,18 @@ func NewRedis(container *di.Container) (*redis.Client, errors.ApplicationError) 
 		return nil, errors.NewContainerMissingError("Redis")
 	}
 
-	if container.RedisConfig == nil {
+	cfg := container.RedisConfig
+	if cfg == nil {
 		return nil, errors.NewResolveDependencyError("Redis", "RedisConfig")
 	}
 
+	if err := cfg.Validate("redis"); err != nil {
+		return nil, errors.NewInvalidConfigError("RedisConfig", err)
+	}
+
+	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	return redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%d", container.RedisConfig.Host, container.RedisConfig.Port),
-		DB:   int(container.RedisConfig.Database),
+		Addr: addr,
+		DB:   int(cfg.Database),
 	}), nil
 }

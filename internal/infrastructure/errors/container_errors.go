@@ -49,3 +49,10 @@ func NewContainerConfigMissingError() ApplicationError {
 		code:    ErrorCodeContainerConfigMissing,
 	}
 }
+
+func NewConstructionFailedError(service string, err error) ApplicationError {
+	return InfrastructureError{
+		message: fmt.Sprintf("can't initalize service `%s`: construction failed: %v", service, err),
+		code:    ErrorCodeContainerConstructionFailed,
+	}
+}

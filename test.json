@@ -1,0 +1,17 @@
+{
+  "source": "ctb:rmq",
+  "async": false,
+  "records": [
+    {
+      "body": "{\"test\":\"hello-world\"}",
+      "consumer_tag": "ctag-/usr/local/bin/function-trigger-1",
+      "delivery_mode": 2,
+      "delivery_tag": 1,
+      "exchange": "ft.function-trigger",
+      "message_id": "test-123",
+      "redelivered": false,
+      "routing_key": "ft.function-as-a-service",
+      "timestamp": "0001-01-01T00:00:00Z"
+    }
+  ]
+}

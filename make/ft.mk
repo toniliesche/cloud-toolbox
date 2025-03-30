@@ -35,10 +35,16 @@ setup-ft-rabbitmq:
 	$(MAKE) create-rabbitmq-queue RABBITMQ_QUEUE=$(FT_RABBITMQ_QUEUE).dlq RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST)
 
 	$(call print_message,Creating RabbitMQ Queue "$(FT_RABBITMQ_QUEUE)")
-	$(MAKE) create-rabbitmq-queue RABBITMQ_QUEUE=$(FT_RABBITMQ_QUEUE) RABBITMQ_DLX=$(FT_RABBITMQ_DLX).dlx RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST)
+	$(MAKE) create-rabbitmq-queue RABBITMQ_QUEUE=$(FT_RABBITMQ_QUEUE) RABBITMQ_DLX=$(FT_RABBITMQ_DLX) RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST)
 
 	$(call print_message,Creating RabbitMQ Binding from Exchange "$(FT_RABBITMQ_DLX)" to Queue "$(FT_RABBITMQ_QUEUE).dlq" (Topic: "$(FT_RABBITMQ_QUEUE).dlq"))
 	$(MAKE) create-rabbitmq-binding RABBITMQ_EXCHANGE=$(FT_RABBITMQ_DLX) RABBITMQ_QUEUE=$(FT_RABBITMQ_QUEUE).dlq RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST) RABBITMQ_BINDING_KEY="$(FT_RABBITMQ_QUEUE).dlq"
+
+	$(call print_message,Creating RabbitMQ Exchange "$(FT_RABBITMQ_EXCHANGE)")
+	$(MAKE) create-rabbitmq-exchange RABBITMQ_EXCHANGE=$(FT_RABBITMQ_EXCHANGE) RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST)
+
+	$(call print_message,Creating RabbitMQ Binding from Exchange "$(FT_RABBITMQ_EXCHANGE)" to Queue "$(FT_RABBITMQ_QUEUE)" (Topic: "$(FT_RABBITMQ_QUEUE)"))
+	$(MAKE) create-rabbitmq-binding RABBITMQ_EXCHANGE=$(FT_RABBITMQ_EXCHANGE) RABBITMQ_QUEUE=$(FT_RABBITMQ_QUEUE) RABBITMQ_VHOST=$(FT_RABBITMQ_VHOST) RABBITMQ_BINDING_KEY="$(FT_RABBITMQ_QUEUE)"
 
 uninstall-ft:
 	$(call print_message,Deleting RabbitMQ vHost "$(FT_RABBITMQ_VHOST)")

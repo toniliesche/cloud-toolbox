@@ -22,6 +22,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
+	"cloud-toolbox/internal/infrastructure/rabbitmq/model"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -71,7 +72,7 @@ func (f *FunctionAsAService) GetExecutionStatus(executionId string) modelinterfa
 }
 
 func (f *FunctionAsAService) RunFunction(payload []byte) modelinterfaces.Response {
-	executionId := uuid.New().String()
+	executionId := fmt.Sprintf("ctb:faas:%s:%s", f.cfg.FunctionName, uuid.New().String())
 
 	base := &models.FaasRequestSource{}
 	f.logger.Debug().
@@ -122,7 +123,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 		Str("execution-id", executionId).
 		Msgf("[%s] Trying to unmarshal payload to FaasRequest", FunctionAsAServiceLogIdentifier)
 
-	request := &models.FaasRequest[*models.RabbitMQRecord]{}
+	request := &models.FaasRequest[*model.RabbitMQRecord]{}
 	if err := json.Unmarshal(payload, request); err != nil {
 		f.logger.Warn().
 			Err(err).
@@ -148,7 +149,7 @@ func (f *FunctionAsAService) runRabbitMQSourceFunction(executionId string, paylo
 	return f.runFunction(executionId, request)
 }
 
-func (f *FunctionAsAService) runFunction(executionId string, request *models.FaasRequest[*models.RabbitMQRecord]) modelinterfaces.Response {
+func (f *FunctionAsAService) runFunction(executionId string, request *models.FaasRequest[*model.RabbitMQRecord]) modelinterfaces.Response {
 	f.logger.Trace().
 		Str("execution-id", executionId).
 		Msgf("[%s] Trying to marshal records to JSON", FunctionAsAServiceLogIdentifier)

@@ -11,33 +11,14 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package models
+package services
 
 import (
-	"cloud-toolbox/internal/infrastructure/errors"
+	"cloud-toolbox/internal/infrastructure/config"
+	"cloud-toolbox/internal/infrastructure/rabbitmq/interfaces"
 )
 
-type RabbitMQRecord struct {
-	MessageId string `json:"messageId"`
-	Body      string `json:"body"`
-}
-
-func (r *RabbitMQRecord) GetRecordIdentifier() string {
-	return r.MessageId
-}
-
-func (r *RabbitMQRecord) GetPayload() string {
-	return r.Body
-}
-
-func (r *RabbitMQRecord) Validate() errors.ApplicationError {
-	if r.MessageId == "" {
-		return errors.NewMissingRequestFieldError("messageId")
-	}
-
-	if r.Body == "" {
-		return errors.NewMissingRequestFieldError("body")
-	}
-
-	return nil
+type Subscriber struct {
+	Queue   *config.RabbitMQQueueConfig
+	Handler interfaces.RabbitMQMessageHandler
 }

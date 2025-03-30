@@ -20,6 +20,12 @@ import (
 	"slices"
 )
 
+const (
+	functionAsAServiceDefaultStorageTtl        = 60
+	functionAsAServiceDefaultParallelExecution = 10
+	functionAsAServiceDefaultExecutionTimeout  = 30
+)
+
 type FunctionAsAServiceConfig struct {
 	ApplicationConfig
 	HttpServer        *HttpServerConfig `yaml:"http"`
@@ -28,6 +34,7 @@ type FunctionAsAServiceConfig struct {
 	StorageBackend    string            `json:"storage_backend"`
 	StorageTtl        int64             `json:"storage_ttl"`
 	Command           string            `yaml:"command"`
+	FunctionName      string            `yaml:"function_name"`
 	ParallelExecution int64             `yaml:"parallel_execution"`
 	ExecutionTimeout  int64             `yaml:"execution_timeout"`
 }
@@ -51,6 +58,10 @@ func (c *FunctionAsAServiceConfig) Validate() errors.ApplicationError {
 
 	if c.Command == "" {
 		return errors.NewMissingConfigValueError("command")
+	}
+
+	if c.FunctionName == "" {
+		return errors.NewMissingConfigValueError("function_name")
 	}
 
 	if c.ParallelExecution < 1 {
@@ -126,11 +137,13 @@ func ProvideFunctionAsAServiceConfig() (*FunctionAsAServiceConfig, errors.Applic
 
 func getDefaultFunctionAsAServiceConfig() *FunctionAsAServiceConfig {
 	return &FunctionAsAServiceConfig{
-		HttpServer:     getDefaultHttpServerConfig(),
-		Redis:          getDefaultRedisConfig(),
-		Scylla:         getDefaultScyllaConfig(),
-		StorageBackend: "inmemory",
-		StorageTtl:     60,
+		HttpServer:        getDefaultHttpServerConfig(),
+		Redis:             getDefaultRedisConfig(),
+		Scylla:            getDefaultScyllaConfig(),
+		StorageBackend:    "inmemory",
+		StorageTtl:        functionAsAServiceDefaultStorageTtl,
+		ParallelExecution: functionAsAServiceDefaultParallelExecution,
+		ExecutionTimeout:  functionAsAServiceDefaultExecutionTimeout,
 	}
 }
 
@@ -159,12 +172,17 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_COMMAND")
 	}
 
-	parallelExecution, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION_LIMIT", 10)
+	functionName := GetEnvironmentString("FUNCTION_AS_A_SERVICE_FUNCTION_NAME", "")
+	if functionName == "" {
+		return nil, errors.NewMissingEnvironmentVariableError("FUNCTION_AS_A_SERVICE_FUNCTION_NAME")
+	}
+
+	parallelExecution, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_PARALLEL_EXECUTION_LIMIT", functionAsAServiceDefaultParallelExecution)
 	if err != nil {
 		return nil, err
 	}
 
-	executionTimeout, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT", 30)
+	executionTimeout, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_EXECUTION_TIMEOUT", functionAsAServiceDefaultExecutionTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +194,7 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 
 	storageBackend := GetEnvironmentString("FUNCTION_AS_A_SERVICE_STORAGE_BACKEND", "")
 
-	storageTtl, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_STORAGE_TTL", 60)
+	storageTtl, err := GetEnvironmentInt("FUNCTION_AS_A_SERVICE_STORAGE_TTL", functionAsAServiceDefaultStorageTtl)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +223,7 @@ func getFunctionAsAServiceConfigFromEnvironment() (*FunctionAsAServiceConfig, er
 		Redis:             redisConfig,
 		Scylla:            scyllaConfig,
 		Command:           command,
+		FunctionName:      functionName,
 		ParallelExecution: parallelExecution,
 		ExecutionTimeout:  executionTimeout,
 		StorageBackend:    storageBackend,

@@ -17,12 +17,10 @@ import (
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/setup"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -44,14 +42,15 @@ func main() {
 	}
 
 	logger := container.Logger
+	consumer := container.RabbitMQConsumer
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		for true {
-			fmt.Println("wait")
-			time.Sleep(time.Second)
+		if err = consumer.Run(); err != nil {
+			logger.Fatal().Err(err).
+				Msg("failed to run server")
 		}
 	}()
 

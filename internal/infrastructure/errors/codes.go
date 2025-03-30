@@ -31,11 +31,13 @@ const (
 	ErrorCodeConfigValueMustBeLessThanOrEqual    = 10105
 	ErrorCodeConfigValueInvalid                  = 10106
 	ErrorCodeConfigValueEmptyList                = 10107
+	ErrorCodeConfigValueMissingListEntry         = 10108
 	ErrorCodeContainerConfigMissing              = 10200
 	ErrorCodeContainerMissingDependency          = 10201
 	ErrorCodeContainerInvalidConfig              = 10202
 	ErrorCodeContainerApplicationSetup           = 10203
 	ErrorCodeContainerMissing                    = 10204
+	ErrorCodeContainerConstructionFailed         = 10205
 	ErrorCodeServerNoRoutes                      = 10300
 	ErrorCodeServerRouteFailed                   = 10301
 	ErrorCodeConfigFileReadingFailedError        = 10400

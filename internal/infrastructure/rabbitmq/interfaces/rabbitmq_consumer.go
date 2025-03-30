@@ -13,9 +13,11 @@
 
 package interfaces
 
-type FaasRecord interface {
-	Validatable
-	GetRecordIdentifier() string
-	GetMetaInformation() map[string]string
-	GetPayload() string
+import "cloud-toolbox/internal/infrastructure/errors"
+
+type RabbitMQConsumer interface {
+	Run() errors.ApplicationError
+	RegisterHandler(handler RabbitMQMessageHandler) errors.ApplicationError
+	WithBatchSize(size int64) RabbitMQConsumer
+	WithBatchTimeout(timeout int64) RabbitMQConsumer
 }

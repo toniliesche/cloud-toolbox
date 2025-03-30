@@ -29,10 +29,17 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 	var err errors.ApplicationError
 
 	if b.faasConfig == nil {
+		b.logger.Trace().
+			Msgf("[%s] `FunctionAsAService` config is nil", ContainerBuilderLogIdentifier)
 		return errors.NewResolveDependencyError("Function as a Service", "faasConfig")
 	}
 
+	b.logger.Trace().
+		Msgf("[%s] Validating `FunctionAsAService` config", ContainerBuilderLogIdentifier)
 	if err = b.faasConfig.Validate(); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] `FunctionAsAService` config is invalid", ContainerBuilderLogIdentifier)
 		return errors.NewApplicationSetupError("Function as a Service", err)
 	}
 	container.FunctionAsAServiceConfig = b.faasConfig
@@ -67,12 +74,18 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 		b.logger.Trace().
 			Msgf("[%s] Initializing `FunctionExecutionRepository` with scylla backend", ContainerBuilderLogIdentifier)
 		if container.FunctionExecutionRepository, err = scylla.NewFunctionExecutionRepository(container); err != nil {
+			b.logger.Trace().
+				Err(err).
+				Msgf("[%s] Error initializing `FunctionExecutionRepository` with scylla backend", ContainerBuilderLogIdentifier)
 			return err
 		}
 	} else {
 		b.logger.Trace().
 			Msgf("[%s] Initializing `FunctionExecutionRepository` with storage backend", ContainerBuilderLogIdentifier)
 		if container.FunctionExecutionRepository, err = inmemory.NewFunctionExecutionRepository(container); err != nil {
+			b.logger.Trace().
+				Err(err).
+				Msgf("[%s] Error initializing `FunctionExecutionRepository` with inmemory backend", ContainerBuilderLogIdentifier)
 			return err
 		}
 	}
@@ -80,12 +93,18 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionAsAService` registry", ContainerBuilderLogIdentifier)
 	if container.FunctionRegistry, err = services.NewFunctionRegistry(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `FunctionRegistry`", ContainerBuilderLogIdentifier)
 		return err
 	}
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionAsAService` service", ContainerBuilderLogIdentifier)
 	if container.FunctionAsAServiceService, err = faas.NewFunctionAsAServiceService(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `FunctionAsAService` service", ContainerBuilderLogIdentifier)
 		return err
 	}
 
@@ -94,22 +113,34 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 	container.HttpServerConfig = b.faasConfig.HttpServer
 
 	b.logger.Trace().
-		Msgf("[%s] Initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceHandler, err = http.NewFunctionAsAServiceHandler(container); err != nil {
+		Msgf("[%s] Initializing `HttpServer`", ContainerBuilderLogIdentifier)
+	if container.HttpServer, err = http.NewServer(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `HttpServer`", ContainerBuilderLogIdentifier)
 		return err
 	}
 
 	b.logger.Trace().
-		Msgf("[%s] Initializing `HttpServer`", ContainerBuilderLogIdentifier)
-	if container.HttpServer, err = http.NewServer(container); err != nil {
+		Msgf("[%s] Initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
+	if container.FunctionAsAServiceHandler, err = http.NewFunctionAsAServiceHandler(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
 		return err
 	}
 
 	b.logger.Trace().
 		Msgf("[%s] Registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
 	if err = container.HttpServer.RegisterRoutes(container.FunctionAsAServiceHandler); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
 		return err
 	}
+
+	b.logger.Trace().
+		Msgf("[%s] `FunctionAsAService` setup completed", ContainerBuilderLogIdentifier)
 
 	return nil
 }

@@ -18,6 +18,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http/models"
+	"fmt"
 	"github.com/rs/zerolog"
 	"io"
 	"net/http"
@@ -28,19 +29,20 @@ const FunctionAsAServiceHandlerLogIdentifier = "FunctionAsAServiceHandler"
 type FunctionAsAServiceHandler struct {
 	Handler
 	JsonResponseHandler
-	service interfaces.FunctionAsAService
-	logger  *zerolog.Logger
+	service      interfaces.FunctionAsAService
+	logger       *zerolog.Logger
+	functionName string
 }
 
 func (h *FunctionAsAServiceHandler) GetRoutes() []*models.Route {
 	return []*models.Route{
 		{
-			"/cloud-toolbox/faas",
+			fmt.Sprintf("/cloud-toolbox/faas/%s", h.functionName),
 			[]string{"POST"},
 			h.runFunction,
 		},
 		{
-			"/cloud-toolbox/faas/status/{executionId}",
+			fmt.Sprintf("/cloud-toolbox/faas/%s/status/{executionId}", h.functionName),
 			[]string{"GET"},
 			h.queryFunctionStatus,
 		},
@@ -81,20 +83,29 @@ func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWrit
 
 func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceHandler, domainerrors.ApplicationError) {
 	if container == nil {
-		return nil, domainerrors.NewContainerMissingError("FunctionAsAServiceHandler")
+		return nil, domainerrors.NewContainerMissingError(FunctionAsAServiceHandlerLogIdentifier)
 	}
 
 	if container.FunctionAsAServiceService == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceHandler", "FunctionAsAServiceService")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceHandlerLogIdentifier, "FunctionAsAServiceService")
+	}
+
+	if container.FunctionAsAServiceConfig == nil {
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceHandlerLogIdentifier, "FunctionAsAServiceConfig")
+	}
+
+	if err := container.FunctionAsAServiceConfig.Validate(); err != nil {
+		return nil, domainerrors.NewInvalidConfigError(FunctionAsAServiceHandlerLogIdentifier, err)
 	}
 
 	if container.Logger == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceHandler", "Logger")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceHandlerLogIdentifier, "Logger")
 	}
 
 	return &FunctionAsAServiceHandler{
 		JsonResponseHandler: JsonResponseHandler{},
 		service:             container.FunctionAsAServiceService,
 		logger:              container.Logger,
+		functionName:        container.FunctionAsAServiceConfig.FunctionName,
 	}, nil
 }

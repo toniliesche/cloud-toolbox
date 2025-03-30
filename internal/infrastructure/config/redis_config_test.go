@@ -19,31 +19,39 @@ import (
 	"testing"
 )
 
-func TestValidateLogConfigFailsOnMissingLevel(t *testing.T) {
-	cfg := getValidLogConfig()
-	cfg.Level = ""
+func TestValidateRedisConfigFailsOnEmptyHost(t *testing.T) {
+	cfg := getValidRedisConfig()
+	cfg.Host = ""
 
-	err := cfg.Validate("log")
-	if !assert.Error(t, err, "did not catch missing level error") {
-		return
-	}
-
-	if !assert.Equal(t, "config value `log.level` must exist", err.Error(), "unexpected error message") {
-		return
+	err := cfg.Validate("redis")
+	if assert.Error(t, err, "expected error") {
+		assert.Equal(t, "config value `redis.host` must exist", err.Error())
 	}
 }
 
-func TestValidateLogConfigSucceedsOnValidConfig(t *testing.T) {
-	cfg := getValidLogConfig()
+func TestValidateRedisConfigFailsOnZeroPort(t *testing.T) {
+	cfg := getValidRedisConfig()
+	cfg.Port = 0
 
-	err := cfg.Validate("log")
+	err := cfg.Validate("redis")
+	if assert.Error(t, err, "expected error") {
+		assert.Equal(t, "config value `redis.port` must exist", err.Error())
+	}
+}
+
+func TestValidateRedisConfigSucceedsOnValidConfig(t *testing.T) {
+	cfg := getValidRedisConfig()
+
+	err := cfg.Validate("redis")
 	if !assert.NoError(t, err, "unexpected error") {
 		return
 	}
 }
 
-func getValidLogConfig() *config.LogConfig {
-	return &config.LogConfig{
-		Level: "info",
+func getValidRedisConfig() *config.RedisConfig {
+	return &config.RedisConfig{
+		Host:     "localhost",
+		Port:     6379,
+		Database: 0,
 	}
 }

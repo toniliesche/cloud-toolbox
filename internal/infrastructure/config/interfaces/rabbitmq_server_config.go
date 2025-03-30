@@ -13,9 +13,6 @@
 
 package interfaces
 
-type FaasRecord interface {
-	Validatable
-	GetRecordIdentifier() string
-	GetMetaInformation() map[string]string
-	GetPayload() string
+type RabbitMQServerConfig interface {
+	Addr() string
 }

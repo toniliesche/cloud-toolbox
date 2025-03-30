@@ -143,6 +143,8 @@ down-test:
 
 up-test: up-docker
 
+setup-test: setup-rabbitmq setup-faas setup-ft
+
 up-docker:
 	$(call print_message,Starting Docker containers)
 

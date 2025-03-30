@@ -16,12 +16,14 @@ package di
 import (
 	faasinterfaces "cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/infrastructure/config"
-	"cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
+	dbinterfaces "cloud-toolbox/internal/infrastructure/database/repositories/interfaces"
 	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
+	rmqinterfaces "cloud-toolbox/internal/infrastructure/rabbitmq/interfaces"
 	"context"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
+	"github.com/streadway/amqp"
 )
 
 type Container struct {
@@ -29,12 +31,17 @@ type Container struct {
 	FunctionAsAServiceConfig    *config.FunctionAsAServiceConfig
 	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
 	FunctionAsAServiceService   faasinterfaces.FunctionAsAService
-	FunctionExecutionRepository interfaces.FunctionExecutionRepository
-	FunctionTriggerConfig       *config.FunctionTriggerConfig
+	FunctionExecutionRepository dbinterfaces.FunctionExecutionRepository
 	FunctionRegistry            faasinterfaces.FunctionRegistry
+	FunctionTriggerConfig       *config.FunctionTriggerConfig
+	FunctionTriggerHandler      rmqinterfaces.RabbitMQMessageHandler
 	HttpServer                  httpinterfaces.HttpServer
 	HttpServerConfig            *config.HttpServerConfig
 	Logger                      *zerolog.Logger
+	RabbitMQConnectionConsumer  *amqp.Connection
+	RabbitMQConnectionProducer  *amqp.Connection
+	RabbitMQConfig              *config.RabbitMQConfig
+	RabbitMQConsumer            rmqinterfaces.RabbitMQConsumer
 	Redis                       *redis.Client
 	RedisConfig                 *config.RedisConfig
 	SystemConfig                *config.SystemConfig

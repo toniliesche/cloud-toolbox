@@ -18,3 +18,4 @@ setup-faas-scylla:
 	$(call print_message,Setting up Scylla Table for FaaS)
 
 	$(MAKE) create-scylla-table SCYLLA_TABLE=$(FAAS_STORAGE_TABLE_SCYLLA)
+	$(MAKE) enable-ttl SCYLLA_TABLE=$(FAAS_STORAGE_TABLE_SCYLLA)

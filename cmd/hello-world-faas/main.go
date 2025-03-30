@@ -14,6 +14,7 @@
 package main
 
 import (
+	"cloud-toolbox/internal/infrastructure/rabbitmq/model"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -38,7 +39,23 @@ func main() {
 	log.Println("hello world started")
 	log.Printf("input: %s\n", string(input))
 
-	result, _ := json.Marshal(&faasResult{Status: "success"})
+	records := make([]*model.RabbitMQRecord, 0)
+	if err := json.Unmarshal(input, &records); err != nil {
+		log.Println("Error unmarshalling input:", err)
+		return
+	}
+
+	failed := make([]string, 0)
+	for _, record := range records {
+		failed = append(failed, record.GetRecordIdentifier())
+	}
+
+	faasResult := &faasResult{
+		FailedRecords: failed,
+		Status:        "success",
+	}
+
+	result, _ := json.Marshal(faasResult)
 
 	fmt.Print(string(result))
 

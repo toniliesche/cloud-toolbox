@@ -13,9 +13,11 @@
 
 package interfaces
 
-type FaasRecord interface {
-	Validatable
-	GetRecordIdentifier() string
-	GetMetaInformation() map[string]string
-	GetPayload() string
+import (
+	"github.com/streadway/amqp"
+)
+
+type RabbitMQMessageHandler interface {
+	QueueIdentifier() string
+	HandleMessageBatch(msg []amqp.Delivery) ([]string, error)
 }

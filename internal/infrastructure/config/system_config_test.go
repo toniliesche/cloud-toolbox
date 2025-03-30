@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestSystemConfigFailsOnMissingLogConfig(t *testing.T) {
+func TestValidateSystemConfigFailsOnMissingLogConfig(t *testing.T) {
 	cfg := getValidSystemConfig()
 	cfg.Log = nil
 
@@ -33,7 +33,7 @@ func TestSystemConfigFailsOnMissingLogConfig(t *testing.T) {
 	}
 }
 
-func TestSystemConfigFailsOnInvalidLogConfig(t *testing.T) {
+func TestValidateSystemConfigFailsOnInvalidLogConfig(t *testing.T) {
 	cfg := getValidSystemConfig()
 	cfg.Log.Level = ""
 
@@ -47,7 +47,7 @@ func TestSystemConfigFailsOnInvalidLogConfig(t *testing.T) {
 	}
 }
 
-func TestSystemConfigSucceeds(t *testing.T) {
+func TestValidateSystemConfigSucceedsOnValidConfig(t *testing.T) {
 	cfg := getValidSystemConfig()
 
 	err := cfg.Validate("system")
