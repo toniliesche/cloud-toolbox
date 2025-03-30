@@ -15,7 +15,7 @@ package model
 
 import (
 	"cloud-toolbox/internal/infrastructure/errors"
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 	"strconv"
 	"time"
 )
@@ -135,7 +135,7 @@ func (r *RabbitMQRecord) Validate() errors.ApplicationError {
 	return nil
 }
 
-func NewRabbitMQRecordFromDelivery(deliver amqp.Delivery) *RabbitMQRecord {
+func NewRabbitMQRecordFromDelivery(deliver amqp091.Delivery) *RabbitMQRecord {
 	headers := make(map[string]string)
 
 	for k, v := range deliver.Headers {

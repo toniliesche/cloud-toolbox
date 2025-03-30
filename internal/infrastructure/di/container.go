@@ -21,9 +21,9 @@ import (
 	rmqinterfaces "cloud-toolbox/internal/infrastructure/rabbitmq/interfaces"
 	"context"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
-	"github.com/streadway/amqp"
 )
 
 type Container struct {
@@ -38,8 +38,8 @@ type Container struct {
 	HttpServer                  httpinterfaces.HttpServer
 	HttpServerConfig            *config.HttpServerConfig
 	Logger                      *zerolog.Logger
-	RabbitMQConnectionConsumer  *amqp.Connection
-	RabbitMQConnectionProducer  *amqp.Connection
+	RabbitMQConnectionConsumer  *amqp091.Connection
+	RabbitMQConnectionProducer  *amqp091.Connection
 	RabbitMQConfig              *config.RabbitMQConfig
 	RabbitMQConsumer            rmqinterfaces.RabbitMQConsumer
 	Redis                       *redis.Client

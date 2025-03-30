@@ -16,21 +16,21 @@ package config
 import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 	"regexp"
 	"strings"
 )
 
 type RabbitMQQueueConfig struct {
-	Name       string     `yaml:"name"`
-	Type       string     `yaml:"type"`
-	AutoAck    bool       `yaml:"auto_ack"`
-	AutoDelete bool       `yaml:"auto_delete"`
-	Durable    bool       `yaml:"durable"`
-	Exclusive  bool       `yaml:"exclusive"`
-	NoLocal    bool       `yaml:"no_local"`
-	NoWait     bool       `yaml:"no_wait"`
-	Args       amqp.Table `yaml:"args"`
+	Name       string        `yaml:"name"`
+	Type       string        `yaml:"type"`
+	AutoAck    bool          `yaml:"auto_ack"`
+	AutoDelete bool          `yaml:"auto_delete"`
+	Durable    bool          `yaml:"durable"`
+	Exclusive  bool          `yaml:"exclusive"`
+	NoLocal    bool          `yaml:"no_local"`
+	NoWait     bool          `yaml:"no_wait"`
+	Args       amqp091.Table `yaml:"args"`
 }
 
 func (c *RabbitMQQueueConfig) Validate(path string) errors.ApplicationError {

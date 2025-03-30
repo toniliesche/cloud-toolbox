@@ -16,20 +16,20 @@ package config
 import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"fmt"
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 	"regexp"
 	"strings"
 )
 
 type RabbitMQExchangeConfig struct {
-	Name       string     `yaml:"name"`
-	Type       string     `yaml:"type"`
-	Passive    bool       `yaml:"passive"`
-	Durable    bool       `yaml:"durable"`
-	AutoDelete bool       `yaml:"auto_delete"`
-	Internal   bool       `yaml:"internal"`
-	NoWait     bool       `yaml:"no_wait"`
-	Args       amqp.Table `yaml:"args"`
+	Name       string        `yaml:"name"`
+	Type       string        `yaml:"type"`
+	Passive    bool          `yaml:"passive"`
+	Durable    bool          `yaml:"durable"`
+	AutoDelete bool          `yaml:"auto_delete"`
+	Internal   bool          `yaml:"internal"`
+	NoWait     bool          `yaml:"no_wait"`
+	Args       amqp091.Table `yaml:"args"`
 }
 
 func (c *RabbitMQExchangeConfig) Validate(path string) errors.ApplicationError {

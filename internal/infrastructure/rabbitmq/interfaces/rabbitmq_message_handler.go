@@ -14,10 +14,10 @@
 package interfaces
 
 import (
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQMessageHandler interface {
 	QueueIdentifier() string
-	HandleMessageBatch(msg []amqp.Delivery) ([]string, error)
+	HandleMessageBatch(msg []amqp091.Delivery) ([]string, error)
 }

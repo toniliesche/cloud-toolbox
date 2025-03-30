@@ -21,8 +21,8 @@ import (
 	"cloud-toolbox/internal/infrastructure/rabbitmq/services"
 	"encoding/json"
 	"fmt"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog"
-	"github.com/streadway/amqp"
 	"sync"
 )
 
@@ -32,7 +32,7 @@ const (
 
 type Consumer struct {
 	cfg          *config.RabbitMQConfig
-	rabbitMQ     *amqp.Connection
+	rabbitMQ     *amqp091.Connection
 	logger       *zerolog.Logger
 	wait         sync.WaitGroup
 	subscribers  []*services.Subscriber

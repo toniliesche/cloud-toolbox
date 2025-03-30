@@ -16,8 +16,8 @@ package services
 import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/rabbitmq/interfaces"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog"
-	"github.com/streadway/amqp"
 	"slices"
 	"sync"
 	"time"
@@ -29,7 +29,7 @@ const (
 
 type BatchProcessor struct {
 	mu       sync.Mutex
-	buffer   []amqp.Delivery
+	buffer   []amqp091.Delivery
 	limit    int
 	timer    *time.Timer
 	timeout  time.Duration
@@ -38,7 +38,7 @@ type BatchProcessor struct {
 	batchErr errors.ApplicationError
 }
 
-func (p *BatchProcessor) AddMessage(msg amqp.Delivery) errors.ApplicationError {
+func (p *BatchProcessor) AddMessage(msg amqp091.Delivery) errors.ApplicationError {
 	if p.batchErr != nil {
 		p.logger.Error().
 			Err(p.batchErr).
@@ -142,7 +142,7 @@ func (p *BatchProcessor) processBatch() errors.ApplicationError {
 	p.logger.Trace().
 		Msgf("[%s/%s] Batch processed, %d messages acknowledged (processBatch)", BatchProcessorLogIdentifier, p.handler.QueueIdentifier(), len(p.buffer)-len(failed))
 
-	p.buffer = make([]amqp.Delivery, 0, p.limit)
+	p.buffer = make([]amqp091.Delivery, 0, p.limit)
 
 	return nil
 }
@@ -183,7 +183,7 @@ func (p *BatchProcessor) startTimeoutListener() {
 func NewBatchProcessor(timeout int64, limit int64, handler interfaces.RabbitMQMessageHandler, logger *zerolog.Logger) *BatchProcessor {
 	timeoutObj := time.Duration(timeout) * time.Second
 	processor := &BatchProcessor{
-		buffer:  make([]amqp.Delivery, 0, limit),
+		buffer:  make([]amqp091.Delivery, 0, limit),
 		limit:   int(limit),
 		timer:   time.NewTimer(timeoutObj),
 		timeout: timeoutObj,

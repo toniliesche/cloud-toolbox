@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
@@ -21,6 +22,5 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/streadway/amqp v1.1.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 )

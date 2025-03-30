@@ -23,8 +23,8 @@ import (
 	"cloud-toolbox/internal/infrastructure/rabbitmq/model"
 	"encoding/json"
 	"fmt"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog"
-	"github.com/streadway/amqp"
 	"io"
 	"time"
 )
@@ -43,7 +43,7 @@ func (f *FunctionTriggerHandler) QueueIdentifier() string {
 	return "trigger"
 }
 
-func (f *FunctionTriggerHandler) HandleMessageBatch(msg []amqp.Delivery) ([]string, error) {
+func (f *FunctionTriggerHandler) HandleMessageBatch(msg []amqp091.Delivery) ([]string, error) {
 	records := make([]*model.RabbitMQRecord, 0, len(msg))
 
 	for _, m := range msg {

@@ -18,10 +18,10 @@ import (
 	"cloud-toolbox/internal/infrastructure/config/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 )
 
-func NewRabbitMQ(container *di.Container, mode int) (*amqp.Connection, errors.ApplicationError) {
+func NewRabbitMQ(container *di.Container, mode int) (*amqp091.Connection, errors.ApplicationError) {
 	if container == nil {
 		return nil, errors.NewContainerMissingError("RabbitMQ")
 	}
@@ -42,7 +42,7 @@ func NewRabbitMQ(container *di.Container, mode int) (*amqp.Connection, errors.Ap
 		serverCfg = container.RabbitMQConfig.Producer
 	}
 
-	conn, err := amqp.Dial(serverCfg.Addr())
+	conn, err := amqp091.Dial(serverCfg.Addr())
 	if err != nil {
 		return nil, errors.NewConstructionFailedError("RabbitMQ", err)
 	}
