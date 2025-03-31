@@ -19,14 +19,14 @@ type FaasResponse struct {
 	Data        map[string]interface{}
 }
 
-func (f *FaasResponse) GetStatusCode() int {
-	return f.Status
+func (r *FaasResponse) GetStatusCode() int {
+	return r.Status
 }
 
-func (f *FaasResponse) GetBody() interface{} {
-	if _, ok := f.Data["executionId"]; !ok {
-		f.Data["executionId"] = f.ExecutionId
+func (r *FaasResponse) GetBody() interface{} {
+	if _, ok := r.Data["executionId"]; !ok {
+		r.Data["executionId"] = r.ExecutionId
 	}
 
-	return f.Data
+	return r.Data
 }

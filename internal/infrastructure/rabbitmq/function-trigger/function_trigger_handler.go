@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	FunctionTriggerHandlerLogIdentifier = "FunctionTriggerHandler"
+	FunctionTriggerHandlerLogIdentifier = "FunctionTriggerRabbitMQHandler"
 )
 
 type FunctionTriggerHandler struct {

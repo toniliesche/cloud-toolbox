@@ -17,7 +17,7 @@ import (
 	"cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
-	http2 "cloud-toolbox/internal/infrastructure/http"
+	infrastructurehttp "cloud-toolbox/internal/infrastructure/http"
 	"cloud-toolbox/internal/infrastructure/http/models"
 	"fmt"
 	"github.com/rs/zerolog"
@@ -25,14 +25,14 @@ import (
 	"net/http"
 )
 
-const FunctionAsAServiceHandlerLogIdentifier = "FunctionAsAServiceHandler"
+const FunctionAsAServiceHandlerLogIdentifier = "FunctionAsAServiceHttpHandler"
 
 type FunctionAsAServiceHandler struct {
-	http2.Handler
-	http2.JsonResponseHandler
-	service      interfaces.FunctionAsAService
-	logger       *zerolog.Logger
-	functionName string
+	infrastructurehttp.Handler
+	infrastructurehttp.JsonResponseHandler
+	functionAsAService interfaces.FunctionAsAService
+	logger             *zerolog.Logger
+	functionName       string
 }
 
 func (h *FunctionAsAServiceHandler) GetRoutes() []*models.Route {
@@ -61,7 +61,7 @@ func (h *FunctionAsAServiceHandler) runFunction(writer http.ResponseWriter, requ
 		Bytes("body", body).
 		Msgf("[%s] Handling run function request", FunctionAsAServiceHandlerLogIdentifier)
 
-	response := h.service.RunFunction(body)
+	response := h.functionAsAService.RunFunction(body)
 
 	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
@@ -77,7 +77,7 @@ func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWrit
 		Str("executionId", executionId).
 		Msgf("[%s] Handling get function status request", FunctionAsAServiceHandlerLogIdentifier)
 
-	response := h.service.GetExecutionStatus(executionId)
+	response := h.functionAsAService.GetExecutionStatus(executionId)
 
 	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
@@ -87,8 +87,8 @@ func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceH
 		return nil, domainerrors.NewContainerMissingError(FunctionAsAServiceHandlerLogIdentifier)
 	}
 
-	if container.FunctionAsAServiceService == nil {
-		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceHandlerLogIdentifier, "FunctionAsAServiceService")
+	if container.FunctionAsAService == nil {
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceHandlerLogIdentifier, "FunctionAsAService")
 	}
 
 	if container.FunctionAsAServiceConfig == nil {
@@ -104,8 +104,8 @@ func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceH
 	}
 
 	return &FunctionAsAServiceHandler{
-		JsonResponseHandler: http2.JsonResponseHandler{},
-		service:             container.FunctionAsAServiceService,
+		JsonResponseHandler: infrastructurehttp.JsonResponseHandler{},
+		functionAsAService:  container.FunctionAsAService,
 		logger:              container.Logger,
 		functionName:        container.FunctionAsAServiceConfig.FunctionName,
 	}, nil

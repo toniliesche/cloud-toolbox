@@ -11,13 +11,33 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package interfaces
+package models
 
 import (
-	"cloud-toolbox/internal/infrastructure/http/models/interfaces"
+	"cloud-toolbox/internal/infrastructure/errors"
 )
 
-type FunctionAsAService interface {
-	RunFunction(payload []byte) interfaces.Response
-	GetExecutionStatus(executionId string) interfaces.Response
+type ErrorResponse struct {
+	Status string
+	Err    errors.ApplicationError
+}
+
+func (r *ErrorResponse) GetStatusCode() int {
+	return errors.MapToStatusCode(r.Err.Code())
+}
+
+func (r *ErrorResponse) GetBody() interface{} {
+	body := map[string]interface{}{
+		"status": r.Status,
+		"error":  r.Err.Error(),
+	}
+
+	return body
+}
+
+func NewErrorResponse(errorCode string, err errors.ApplicationError) *ErrorResponse {
+	return &ErrorResponse{
+		Status: errorCode,
+		Err:    err,
+	}
 }

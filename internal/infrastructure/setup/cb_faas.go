@@ -102,7 +102,7 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionAsAService` service", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceService, err = faas.NewFunctionAsAServiceService(container); err != nil {
+	if container.FunctionAsAService, err = faas.NewFunctionAsAService(container); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error initializing `FunctionAsAService` service", ContainerBuilderLogIdentifier)
@@ -124,7 +124,7 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceHandler, err = function_as_a_service.NewFunctionAsAServiceHandler(container); err != nil {
+	if container.FunctionAsAServiceHttpHandler, err = function_as_a_service.NewFunctionAsAServiceHandler(container); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
@@ -133,7 +133,7 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 
 	b.logger.Trace().
 		Msgf("[%s] Registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if err = container.HttpServer.RegisterRoutes(container.FunctionAsAServiceHandler); err != nil {
+	if err = container.HttpServer.RegisterRoutes(container.FunctionAsAServiceHttpHandler); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)

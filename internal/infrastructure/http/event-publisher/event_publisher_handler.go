@@ -25,7 +25,7 @@ import (
 	"net/http"
 )
 
-const EventPublisherHandlerLogIdentifier = "EventPublisherHandler"
+const EventPublisherHandlerLogIdentifier = "EventPublisherHttpHandler"
 
 type EventPublisherHandler struct {
 	infrastructurehttp.Handler
@@ -54,9 +54,9 @@ func (h *EventPublisherHandler) publishEvent(writer http.ResponseWriter, request
 
 	h.logger.Info().
 		Bytes("body", body).
-		Msgf("[%s] Handling run function request", EventPublisherHandlerLogIdentifier)
+		Msgf("[%s] Handling publish event rquest", EventPublisherHandlerLogIdentifier)
 
-	response := h.service.PublishEvent(body)
+	response := models.NewErrorResponse("not-found", domainerrors.NewEndpointNotImplementedError(request.RequestURI))
 
 	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
@@ -67,7 +67,7 @@ func NewEventPublisherHandler(container *di.Container) (*EventPublisherHandler, 
 	}
 
 	if container.EventPublisher == nil {
-		return nil, domainerrors.NewResolveDependencyError(EventPublisherHandlerLogIdentifier, "EventPublisherService")
+		return nil, domainerrors.NewResolveDependencyError(EventPublisherHandlerLogIdentifier, "EventPublisher")
 	}
 
 	if container.EventPublisherConfig == nil {

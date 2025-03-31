@@ -39,7 +39,6 @@ LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.title="Function Trigger container"
 LABEL org.opencontainers.image.description="RabbitMQ triggered Function Trigger container"
-ENV HTTP_SERVER_HOST=0.0.0.0
 
 COPY --from=builder /tmp/cloud-toolbox/build/faas /usr/local/bin/faas
 

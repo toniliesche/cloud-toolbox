@@ -18,10 +18,10 @@ import (
 	faasinterfaces "cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/application/faas/models"
 	faasmodels "cloud-toolbox/internal/domain/faas/models"
-	modelinterfaces "cloud-toolbox/internal/domain/models/interfaces"
 	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
+	modelinterfaces "cloud-toolbox/internal/infrastructure/http/models/interfaces"
 	"cloud-toolbox/internal/infrastructure/rabbitmq/model"
 	"context"
 	"encoding/json"
@@ -281,25 +281,25 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 	}
 }
 
-func NewFunctionAsAServiceService(container *di.Container) (faasinterfaces.FunctionAsAService, domainerrors.ApplicationError) {
+func NewFunctionAsAService(container *di.Container) (faasinterfaces.FunctionAsAService, domainerrors.ApplicationError) {
 	if container == nil {
-		return nil, domainerrors.NewContainerMissingError("FunctionAsAServiceService")
+		return nil, domainerrors.NewContainerMissingError("FunctionAsAService")
 	}
 
 	if container.Context == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "Context")
+		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "Context")
 	}
 
 	if container.FunctionAsAServiceConfig == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "FunctionAsAServiceConfig")
+		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "FunctionAsAServiceConfig")
 	}
 
 	if container.Logger == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "Logger")
+		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "Logger")
 	}
 
 	if container.FunctionRegistry == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAServiceService", "FunctionRegistry")
+		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "FunctionRegistry")
 	}
 
 	return &FunctionAsAService{

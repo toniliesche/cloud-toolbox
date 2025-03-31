@@ -13,7 +13,9 @@
 
 package interfaces
 
-import "cloud-toolbox/internal/domain/models/interfaces"
+import (
+	"cloud-toolbox/internal/infrastructure/http/models/interfaces"
+)
 
 type EventPublisher interface {
 	PublishEvent(payload []byte) interfaces.Response

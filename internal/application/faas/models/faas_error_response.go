@@ -23,18 +23,18 @@ type FaasErrorResponse struct {
 	Err         errors.ApplicationError
 }
 
-func (f *FaasErrorResponse) GetStatusCode() int {
-	return errors.MapToStatusCode(f.Err.Code())
+func (r *FaasErrorResponse) GetStatusCode() int {
+	return errors.MapToStatusCode(r.Err.Code())
 }
 
-func (f *FaasErrorResponse) GetBody() interface{} {
+func (r *FaasErrorResponse) GetBody() interface{} {
 	body := map[string]interface{}{
-		"status": f.Status,
-		"error":  f.Err.Error(),
+		"status": r.Status,
+		"error":  r.Err.Error(),
 	}
 
-	if f.ExecutionId != "" {
-		body["executionId"] = f.ExecutionId
+	if r.ExecutionId != "" {
+		body["executionId"] = r.ExecutionId
 	}
 
 	return body

@@ -23,8 +23,7 @@ WORKDIR /tmp/cloud-toolbox
 ARG BUILDVER
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    make build-event-publisher && \
-    make build-hello-world-faas
+    make build-event-publisher
 
 FROM debian:${DEBIANVER}-slim
 
@@ -38,9 +37,7 @@ LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.title="Event Publisher container"
 LABEL org.opencontainers.image.description="HTTP triggered Event Publisher container"
-ENV HTTP_SERVER_HOST=0.0.0.0
 
 COPY --from=builder /tmp/cloud-toolbox/build/event-publisher /usr/local/bin/event-publisher
-COPY --from=builder /tmp/cloud-toolbox/build/hello-world-faas /usr/local/bin/hello-world-faas
 
 CMD [ "/usr/local/bin/event-publisher" ]

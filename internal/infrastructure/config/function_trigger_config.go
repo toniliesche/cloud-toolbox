@@ -70,14 +70,14 @@ func (c *FunctionTriggerConfig) Validate() errors.ApplicationError {
 		if err := c.RabbitMQ.Validate("rabbitmq", RabbitMQModeConsumer); err != nil {
 			return errors.NewValidateConfigSectionError("rabbitmq", err)
 		}
-	}
 
-	if c.BatchTimeout < 1 {
-		return errors.NewConfigValueNeedsToBeGreaterZeroError("batch_timeout")
-	}
+		if c.BatchTimeout < 1 {
+			return errors.NewConfigValueNeedsToBeGreaterZeroError("batch_timeout")
+		}
 
-	if c.BatchSize < 1 {
-		return errors.NewConfigValueNeedsToBeGreaterZeroError("batch_size")
+		if c.BatchSize < 1 {
+			return errors.NewConfigValueNeedsToBeGreaterZeroError("batch_size")
+		}
 	}
 
 	if c.FaasHost == "" {

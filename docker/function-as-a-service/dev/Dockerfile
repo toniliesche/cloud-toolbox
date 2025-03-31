@@ -38,7 +38,6 @@ LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.title="Function as a Service container"
 LABEL org.opencontainers.image.description="HTTP triggered Function as a Service container"
-ENV HTTP_SERVER_HOST=0.0.0.0
 
 COPY --from=builder /tmp/cloud-toolbox/build/function-as-a-service /usr/local/bin/function-as-a-service
 COPY --from=builder /tmp/cloud-toolbox/build/hello-world-faas /usr/local/bin/hello-world-faas

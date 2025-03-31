@@ -54,7 +54,8 @@ const (
 	ErrorCodeRequestParsingEmptyPayloadField   = 12002
 	ErrorCodeRequestParsingUnknownPayloadType  = 12003
 
-	ErrorCodeDatabaseItemNotFound = 13000
+	ErrorCodeDatabaseItemNotFound   = 13000
+	ErrorCodeEndpointNotImplemented = 13001
 
 	/* function as a service errors */
 	ErrorCodeFaasExecutionNotFound = 20000

@@ -15,26 +15,27 @@ import (
 )
 
 type Container struct {
-	Context                     context.Context
-	EventPublisher              epinterfaces.EventPublisher
-	EventPublisherConfig        *config.EventPublisherConfig
-	FunctionAsAServiceConfig    *config.FunctionAsAServiceConfig
-	FunctionAsAServiceHandler   httpinterfaces.HttpHandler
-	FunctionAsAServiceService   faasinterfaces.FunctionAsAService
-	FunctionExecutionRepository dbinterfaces.FunctionExecutionRepository
-	FunctionRegistry            faasinterfaces.FunctionRegistry
-	FunctionTriggerConfig       *config.FunctionTriggerConfig
-	FunctionTriggerHandler      rmqinterfaces.RabbitMQMessageHandler
-	HttpServer                  httpinterfaces.HttpServer
-	HttpServerConfig            *config.HttpServerConfig
-	Logger                      *zerolog.Logger
-	RabbitMQConnectionConsumer  *amqp091.Connection
-	RabbitMQConnectionPublisher *amqp091.Connection
-	RabbitMQConfig              *config.RabbitMQConfig
-	RabbitMQConsumer            rmqinterfaces.RabbitMQConsumer
-	Redis                       *redis.Client
-	RedisConfig                 *config.RedisConfig
-	SystemConfig                *config.SystemConfig
-	Scylla                      *dynamodb.DynamoDB
-	ScyllaConfig                *config.ScyllaConfig
+	Context                        context.Context
+	EventPublisher                 epinterfaces.EventPublisher
+	EventPublisherConfig           *config.EventPublisherConfig
+	FunctionAsAServiceConfig       *config.FunctionAsAServiceConfig
+	EventPublisherHttpHandler      httpinterfaces.HttpHandler
+	FunctionAsAServiceHttpHandler  httpinterfaces.HttpHandler
+	FunctionAsAService             faasinterfaces.FunctionAsAService
+	FunctionExecutionRepository    dbinterfaces.FunctionExecutionRepository
+	FunctionRegistry               faasinterfaces.FunctionRegistry
+	FunctionTriggerConfig          *config.FunctionTriggerConfig
+	FunctionTriggerRabbitMQHandler rmqinterfaces.RabbitMQMessageHandler
+	HttpServer                     httpinterfaces.HttpServer
+	HttpServerConfig               *config.HttpServerConfig
+	Logger                         *zerolog.Logger
+	RabbitMQConnectionConsumer     *amqp091.Connection
+	RabbitMQConnectionPublisher    *amqp091.Connection
+	RabbitMQConfig                 *config.RabbitMQConfig
+	RabbitMQConsumer               rmqinterfaces.RabbitMQConsumer
+	Redis                          *redis.Client
+	RedisConfig                    *config.RedisConfig
+	SystemConfig                   *config.SystemConfig
+	Scylla                         *dynamodb.DynamoDB
+	ScyllaConfig                   *config.ScyllaConfig
 }

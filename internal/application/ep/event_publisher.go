@@ -12,3 +12,25 @@
 // copies or substantial portions of the Software.
 
 package ep
+
+import (
+	"cloud-toolbox/internal/infrastructure/di"
+	"cloud-toolbox/internal/infrastructure/errors"
+	"cloud-toolbox/internal/infrastructure/http/models/interfaces"
+)
+
+type EventPublisher struct {
+}
+
+func (p *EventPublisher) PublishEvent(payload []byte) interfaces.Response {
+
+	return nil
+}
+
+func NewEventPublisher(container *di.Container) (*EventPublisher, errors.ApplicationError) {
+	if container == nil {
+		return nil, errors.NewContainerMissingError("EventPublisher")
+	}
+
+	return &EventPublisher{}, nil
+}

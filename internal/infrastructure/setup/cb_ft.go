@@ -41,6 +41,22 @@ func (b *ContainerBuilder) setupFt(container *di.Container) errors.ApplicationEr
 	}
 	container.FunctionTriggerConfig = b.ftConfig
 
+	switch b.ftConfig.TriggerSource {
+	case "rabbitmq":
+		err := b.setupFtRabbitMQ(container)
+		if err != nil {
+			return err
+		}
+	}
+
+	b.logger.Trace().
+		Msgf("[%s] `FunctionTrigger` setup complete", ContainerBuilderLogIdentifier)
+
+	return nil
+}
+
+func (b *ContainerBuilder) setupFtRabbitMQ(container *di.Container) errors.ApplicationError {
+	var err errors.ApplicationError
 	b.logger.Trace().
 		Msgf("[%s] Retrieving RabbitMQConfig from `FunctionTrigger` config", ContainerBuilderLogIdentifier)
 	container.RabbitMQConfig = b.ftConfig.RabbitMQ
@@ -69,7 +85,7 @@ func (b *ContainerBuilder) setupFt(container *di.Container) errors.ApplicationEr
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)
-	if container.FunctionTriggerHandler, err = function_trigger.NewFunctionTriggerHandler(container); err != nil {
+	if container.FunctionTriggerRabbitMQHandler, err = function_trigger.NewFunctionTriggerHandler(container); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error initializing `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)
@@ -78,15 +94,12 @@ func (b *ContainerBuilder) setupFt(container *di.Container) errors.ApplicationEr
 
 	b.logger.Trace().
 		Msgf("[%s] Registering `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)
-	if err = container.RabbitMQConsumer.RegisterHandler(container.FunctionTriggerHandler); err != nil {
+	if err = container.RabbitMQConsumer.RegisterHandler(container.FunctionTriggerRabbitMQHandler); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error registering `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)
 		return errors.NewGenericError(err)
 	}
-
-	b.logger.Trace().
-		Msgf("[%s] `FunctionTrigger` setup complete", ContainerBuilderLogIdentifier)
 
 	return nil
 }
