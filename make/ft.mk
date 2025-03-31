@@ -12,7 +12,7 @@
 # copies or substantial portions of the Software.
 
 setup-ft:
-	$(call print_message,Setting up RabbitMQ for FaaS)
+	$(call print_message,Setting up RabbitMQ for FT)
 	$(MAKE) setup-ft-rabbitmq
 
 setup-ft-rabbitmq:

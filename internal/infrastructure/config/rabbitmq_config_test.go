@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateRabbitMQConfigFailsOnMissingConsumerConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModeConsumer)
 	cfg.Consumer = nil
 
@@ -31,6 +32,7 @@ func TestValidateRabbitMQConfigFailsOnMissingConsumerConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConfigFailsOnInvalidConsumerConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModeConsumer)
 	cfg.Consumer.Queues = nil
 
@@ -42,28 +44,31 @@ func TestValidateRabbitMQConfigFailsOnInvalidConsumerConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConfigFailsOnMissingPublisherConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModePublisher)
-	cfg.Producer = nil
+	cfg.Publisher = nil
 
 	err := cfg.Validate("rabbitmq", config.RabbitMQModePublisher)
 	if !assert.Error(t, err, "expected error") {
 		return
 	}
-	assert.Equal(t, "config section `rabbitmq.producer` must exist", err.Error())
+	assert.Equal(t, "config section `rabbitmq.publisher` must exist", err.Error())
 }
 
 func TestValidateRabbitMQConfigFailsOnInvalidPublisherConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModePublisher)
-	cfg.Producer.Exchanges = nil
+	cfg.Publisher.Exchanges = nil
 
 	err := cfg.Validate("rabbitmq", config.RabbitMQModePublisher)
 	if !assert.Error(t, err, "expected error") {
 		return
 	}
-	assert.Contains(t, err.Error(), "Error in config section `rabbitmq.producer`")
+	assert.Contains(t, err.Error(), "Error in config section `rabbitmq.publisher`")
 }
 
 func TestValidateRabbitMQConfigSucceedsOnValidConsumerConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModeConsumer)
 
 	err := cfg.Validate("rabbitmq", config.RabbitMQModeConsumer)
@@ -73,6 +78,7 @@ func TestValidateRabbitMQConfigSucceedsOnValidConsumerConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConfigSucceedsOnValidPublisherConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModePublisher)
 
 	err := cfg.Validate("rabbitmq", config.RabbitMQModePublisher)
@@ -82,6 +88,7 @@ func TestValidateRabbitMQConfigSucceedsOnValidPublisherConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConfigSucceedsOnValidConsumerAndPublisherConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConfig(config.RabbitMQModePublisherConsumer)
 
 	err := cfg.Validate("rabbitmq", config.RabbitMQModePublisherConsumer)
@@ -91,15 +98,19 @@ func TestValidateRabbitMQConfigSucceedsOnValidConsumerAndPublisherConfig(t *test
 }
 
 func getValidRabbitMQConfig(mode int) *config.RabbitMQConfig {
-	cfg := &config.RabbitMQConfig{}
+	var consumerCfg *config.RabbitMQConsumerConfig
+	var publisherCfg *config.RabbitMQPublisherConfig
 
 	if (mode & config.RabbitMQModeConsumer) == config.RabbitMQModeConsumer {
-		cfg.Consumer = getValidRabbitMQConsumerConfig()
+		consumerCfg = getValidRabbitMQConsumerConfig()
 	}
 
 	if (mode & config.RabbitMQModePublisher) == config.RabbitMQModePublisher {
-		cfg.Producer = getValidRabbitMQProducerConfig()
+		publisherCfg = getValidRabbitMQPublisherConfig()
 	}
 
-	return cfg
+	return &config.RabbitMQConfig{
+		Publisher: publisherCfg,
+		Consumer:  consumerCfg,
+	}
 }

@@ -43,11 +43,7 @@ func (c *ScyllaConfig) Validate(path string) error {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.host", path))
 	}
 
-	if c.Port == 0 {
-		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.port", path))
-	}
-
-	if c.Port < 0 {
+	if c.Port < 1 {
 		return errors.NewConfigValueNeedsToBeGreaterZeroError(fmt.Sprintf("%s.port", path))
 	}
 

@@ -19,6 +19,7 @@ import (
 )
 
 func TestValidateRabbitMQQueueConfigFailsOnMissingName(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQQueueConfig()
 	cfg.Name = ""
 
@@ -28,6 +29,7 @@ func TestValidateRabbitMQQueueConfigFailsOnMissingName(t *testing.T) {
 }
 
 func TestValidateRabbitMQQueueConfigFailsOnMissingType(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQQueueConfig()
 	cfg.Type = ""
 
@@ -37,6 +39,7 @@ func TestValidateRabbitMQQueueConfigFailsOnMissingType(t *testing.T) {
 }
 
 func TestValidateRabbitMQQueueConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQQueueConfig()
 
 	if err := cfg.Validate("rabbitmq"); err != nil {

@@ -39,7 +39,7 @@ func NewRabbitMQ(container *di.Container, mode int) (*amqp091.Connection, errors
 	if mode == config.RabbitMQModeConsumer {
 		serverCfg = container.RabbitMQConfig.Consumer
 	} else {
-		serverCfg = container.RabbitMQConfig.Producer
+		serverCfg = container.RabbitMQConfig.Publisher
 	}
 
 	conn, err := amqp091.Dial(serverCfg.Addr())

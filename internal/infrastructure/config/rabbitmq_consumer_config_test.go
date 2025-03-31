@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateRabbitMQConsumerConfigFailsOnMissingQueueConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Queues = nil
 
@@ -31,6 +32,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnMissingQueueConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnEmptyQueueListConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Queues = map[string]*config.RabbitMQQueueConfig{}
 
@@ -42,6 +44,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnEmptyQueueListConfig(t *testing.T)
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnMissingVHost(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.VHost = ""
 
@@ -53,6 +56,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnMissingVHost(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnMissingHost(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Host = ""
 
@@ -63,18 +67,8 @@ func TestValidateRabbitMQConsumerConfigFailsOnMissingHost(t *testing.T) {
 	assert.Contains(t, err.Error(), "config value `rabbitmq.consumer.host` must exist")
 }
 
-func TestValidateRabbitMQConsumerConfigFailsOnMissingPort(t *testing.T) {
-	cfg := getValidRabbitMQConsumerConfig()
-	cfg.Port = 0
-
-	err := cfg.Validate("rabbitmq.consumer")
-	if !assert.Error(t, err, "expected error") {
-		return
-	}
-	assert.Contains(t, err.Error(), "config value `rabbitmq.consumer.port` must exist")
-}
-
 func TestValidateRabbitMQConsumerConfigFailsOnInvalidPort(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Port = -1
 
@@ -86,6 +80,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnInvalidPort(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnMissingUsername(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Username = ""
 
@@ -97,6 +92,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnMissingUsername(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnMissingPassword(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Password = ""
 
@@ -108,6 +104,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnMissingPassword(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigFailsOnInvalidQueueConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 	cfg.Queues["test"].Name = ""
 
@@ -119,6 +116,7 @@ func TestValidateRabbitMQConsumerConfigFailsOnInvalidQueueConfig(t *testing.T) {
 }
 
 func TestValidateRabbitMQConsumerConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRabbitMQConsumerConfig()
 
 	err := cfg.Validate("rabbitmq.consumer")

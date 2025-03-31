@@ -17,13 +17,15 @@ import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"gopkg.in/yaml.v3"
 	"os"
+	"slices"
 )
 
 type EventPublisherConfig struct {
 	ApplicationConfig
-	HttpServer         *HttpServerConfig `yaml:"http"`
-	RabbitMQ           *RabbitMQConfig   `yaml:"rabbitmq"`
-	EventPublisherName string            `yaml:"event_publisher_name"`
+	HttpServer       *HttpServerConfig `yaml:"http"`
+	RabbitMQ         *RabbitMQConfig   `yaml:"rabbitmq"`
+	PublisherName    string            `yaml:"publisher_name"`
+	PublisherBackend string            `yaml:"publisher_backend"`
 }
 
 func (c *EventPublisherConfig) Validate() errors.ApplicationError {
@@ -43,16 +45,27 @@ func (c *EventPublisherConfig) Validate() errors.ApplicationError {
 		return errors.NewValidateConfigSectionError("http", err)
 	}
 
-	if c.RabbitMQ == nil {
-		return errors.NewMissingConfigSectionError("rabbitmq")
+	if c.PublisherName == "" {
+		return errors.NewMissingConfigValueError("publisher_name")
 	}
 
-	if err := c.RabbitMQ.Validate("rabbitmq", RabbitMQModePublisher); err != nil {
-		return errors.NewValidateConfigSectionError("rabbitmq", err)
+	if c.PublisherBackend == "" {
+		return errors.NewMissingConfigValueError("publisher_backend")
 	}
 
-	if c.EventPublisherName == "" {
-		return errors.NewMissingConfigValueError("event_publisher_name")
+	validBackends := []string{"rabbitmq"}
+	if !slices.Contains(validBackends, c.PublisherBackend) {
+		return errors.NewInvalidConfigValueError("publisher_backend", validBackends, c.PublisherBackend)
+	}
+
+	switch c.PublisherBackend {
+	case "rabbitmq":
+		if c.RabbitMQ == nil {
+			return errors.NewMissingConfigSectionError("rabbitmq")
+		}
+		if err := c.RabbitMQ.Validate("rabbitmq", RabbitMQModePublisher); err != nil {
+			return errors.NewValidateConfigSectionError("rabbitmq", err)
+		}
 	}
 
 	return nil
@@ -113,22 +126,32 @@ func getEventPublisherConfigFromEnvironment() (*EventPublisherConfig, errors.App
 		return nil, err
 	}
 
-	rabbitMQConfig, err := getRabbitMQConfigFromEnvironment(RabbitMQModePublisher)
-	if err != nil {
-		return nil, err
-	}
-
 	eventPublisherName := GetEnvironmentString("EVENT_PUBLISHER_PUBLISHER_NAME", "")
 	if eventPublisherName == "" {
 		return nil, errors.NewMissingEnvironmentVariableError("EVENT_PUBLISHER_PUBLISHER_NAME")
+	}
+
+	eventPublisherBackend := GetEnvironmentString("EVENT_PUBLISHER_BACKEND", "")
+	if eventPublisherBackend == "" {
+		return nil, errors.NewMissingEnvironmentVariableError("EVENT_PUBLISHER_BACKEND")
+	}
+
+	var rabbitMQConfig *RabbitMQConfig
+	switch eventPublisherBackend {
+	case "rabbitmq":
+		rabbitMQConfig, err = getRabbitMQConfigFromEnvironment(RabbitMQModePublisher)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &EventPublisherConfig{
 		ApplicationConfig: ApplicationConfig{
 			SystemConfig: systemConfig,
 		},
-		HttpServer:         httpConfig,
-		RabbitMQ:           rabbitMQConfig,
-		EventPublisherName: eventPublisherName,
+		HttpServer:       httpConfig,
+		RabbitMQ:         rabbitMQConfig,
+		PublisherName:    eventPublisherName,
+		PublisherBackend: eventPublisherBackend,
 	}, nil
 }

@@ -30,18 +30,18 @@ const (
 )
 
 type RabbitMQConfig struct {
-	Producer *RabbitMQProducerConfig `yaml:"producer"`
-	Consumer *RabbitMQConsumerConfig `yaml:"consumer"`
+	Publisher *RabbitMQPublisherConfig `yaml:"publisher"`
+	Consumer  *RabbitMQConsumerConfig  `yaml:"consumer"`
 }
 
 func (c *RabbitMQConfig) Validate(path string, mode int) errors.ApplicationError {
 	if (mode & RabbitMQModePublisher) == RabbitMQModePublisher {
-		if c.Producer == nil {
-			return errors.NewMissingConfigSectionError(fmt.Sprintf("%s.producer", path))
+		if c.Publisher == nil {
+			return errors.NewMissingConfigSectionError(fmt.Sprintf("%s.publisher", path))
 		}
 
-		if err := c.Producer.Validate(fmt.Sprintf("%s.producer", path)); err != nil {
-			return errors.NewValidateConfigSectionError(fmt.Sprintf("%s.producer", path), err)
+		if err := c.Publisher.Validate(fmt.Sprintf("%s.publisher", path)); err != nil {
+			return errors.NewValidateConfigSectionError(fmt.Sprintf("%s.publisher", path), err)
 		}
 	}
 
@@ -59,11 +59,11 @@ func (c *RabbitMQConfig) Validate(path string, mode int) errors.ApplicationError
 }
 
 func (c *RabbitMQConfig) GetExchange(id string) (*RabbitMQExchangeConfig, errors.ApplicationError) {
-	if c.Producer == nil {
-		return nil, errors.NewMissingConfigSectionError("rabbitmq.producer")
+	if c.Publisher == nil {
+		return nil, errors.NewMissingConfigSectionError("rabbitmq.publisher")
 	}
 
-	return c.Producer.GetExchange(id)
+	return c.Publisher.GetExchange(id)
 }
 
 func (c *RabbitMQConfig) GetQueue(id string) (*RabbitMQQueueConfig, errors.ApplicationError) {
@@ -78,7 +78,7 @@ func getDefaultRabbitMQConfig(mode int) *RabbitMQConfig {
 	cfg := &RabbitMQConfig{}
 
 	if (mode & RabbitMQModePublisher) == RabbitMQModePublisher {
-		cfg.Producer = getDefaultRabbitMQProducerConfig()
+		cfg.Publisher = getDefaultRabbitMQPublisherConfig()
 	}
 
 	if (mode & RabbitMQModeConsumer) == RabbitMQModeConsumer {
@@ -92,12 +92,12 @@ func getRabbitMQConfigFromEnvironment(mode int) (*RabbitMQConfig, errors.Applica
 	cfg := getDefaultRabbitMQConfig(mode)
 
 	if (mode & RabbitMQModePublisher) == RabbitMQModePublisher {
-		producerCfg, err := getRabbitMQProducerConfigFromEnvironment()
+		publisherCfg, err := getRabbitMQPublisherConfigFromEnvironment()
 		if err != nil {
 			return nil, err
 		}
 
-		cfg.Producer = producerCfg
+		cfg.Publisher = publisherCfg
 	}
 
 	if (mode & RabbitMQModeConsumer) == RabbitMQModeConsumer {

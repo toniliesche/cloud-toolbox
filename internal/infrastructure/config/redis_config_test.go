@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateRedisConfigFailsOnEmptyHost(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRedisConfig()
 	cfg.Host = ""
 
@@ -29,17 +30,8 @@ func TestValidateRedisConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
-func TestValidateRedisConfigFailsOnZeroPort(t *testing.T) {
-	cfg := getValidRedisConfig()
-	cfg.Port = 0
-
-	err := cfg.Validate("redis")
-	if assert.Error(t, err, "expected error") {
-		assert.Equal(t, "config value `redis.port` must exist", err.Error())
-	}
-}
-
 func TestValidateRedisConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidRedisConfig()
 
 	err := cfg.Validate("redis")

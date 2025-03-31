@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingSystemConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.SystemConfig = nil
 
@@ -34,6 +35,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingSystemConfig(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnInvalidSystemConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.SystemConfig.Log = nil
 
@@ -48,6 +50,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnInvalidSystemConfig(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingHttpConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.HttpServer = nil
 
@@ -62,6 +65,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingHttpConfig(t *testing.T) 
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnInvalidHttpConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.HttpServer.Port = 0
 
@@ -76,6 +80,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnInvalidHttpConfig(t *testing.T) 
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingCommand(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.Command = ""
 
@@ -90,6 +95,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingCommand(t *testing.T) {
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingFunctionName(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.FunctionName = ""
 
@@ -104,6 +110,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingFunctionName(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnZeroParallelExecution(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.ParallelExecution = 0
 
@@ -118,6 +125,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnZeroParallelExecution(t *testing
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnLowExecutionTimeout(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.ExecutionTimeout = 5
 
@@ -132,6 +140,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnLowExecutionTimeout(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnHighExecutionTimeout(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.ExecutionTimeout = 1000
 
@@ -146,6 +155,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnHighExecutionTimeout(t *testing.
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnNegativeStorageTtl(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageTtl = -1
 
@@ -160,6 +170,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnNegativeStorageTtl(t *testing.T)
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnInvalidStorageBackend(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageBackend = "invalid"
 
@@ -174,6 +185,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnInvalidStorageBackend(t *testing
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingRedisConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageBackend = "redis"
 	cfg.Redis = nil
@@ -189,6 +201,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingRedisConfig(t *testing.T)
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnInvalidRedisConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageBackend = "redis"
 	cfg.Redis.Host = ""
@@ -204,6 +217,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnInvalidRedisConfig(t *testing.T)
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnMissingScyllaConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageBackend = "scylla"
 	cfg.Scylla = nil
@@ -219,6 +233,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnMissingScyllaConfig(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigFailsOnInvalidScyllaConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 	cfg.StorageBackend = "scylla"
 	cfg.Scylla = getValidScyllaConfig()
@@ -235,6 +250,7 @@ func TestValidateFunctionAsAServiceConfigFailsOnInvalidScyllaConfig(t *testing.T
 }
 
 func TestValidateFunctionAsAServiceConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidFunctionAsAServiceConfig()
 
 	err := cfg.Validate()

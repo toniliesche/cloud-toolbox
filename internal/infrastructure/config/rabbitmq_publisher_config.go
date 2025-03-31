@@ -18,7 +18,7 @@ import (
 	"fmt"
 )
 
-type RabbitMQProducerConfig struct {
+type RabbitMQPublisherConfig struct {
 	VHost     string                             `yaml:"vhost"`
 	Host      string                             `yaml:"host"`
 	Port      int64                              `yaml:"port"`
@@ -28,7 +28,7 @@ type RabbitMQProducerConfig struct {
 	Exchanges map[string]*RabbitMQExchangeConfig `yaml:"exchanges,omitempty"`
 }
 
-func (c *RabbitMQProducerConfig) Addr() string {
+func (c *RabbitMQPublisherConfig) Addr() string {
 	var proto string
 	if c.Ssl {
 		proto = "amqps"
@@ -52,7 +52,7 @@ func (c *RabbitMQProducerConfig) Addr() string {
 	return addr
 }
 
-func (c *RabbitMQProducerConfig) Validate(path string) errors.ApplicationError {
+func (c *RabbitMQPublisherConfig) Validate(path string) errors.ApplicationError {
 	if c.VHost == "" {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.vhost", path))
 	}
@@ -61,11 +61,7 @@ func (c *RabbitMQProducerConfig) Validate(path string) errors.ApplicationError {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.host", path))
 	}
 
-	if c.Port == 0 {
-		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.port", path))
-	}
-
-	if c.Port < 0 {
+	if c.Port < 1 {
 		return errors.NewConfigValueNeedsToBeGreaterZeroError(fmt.Sprintf("%s.port", path))
 	}
 
@@ -84,7 +80,7 @@ func (c *RabbitMQProducerConfig) Validate(path string) errors.ApplicationError {
 	return nil
 }
 
-func (c *RabbitMQProducerConfig) validateExchanges(path string) errors.ApplicationError {
+func (c *RabbitMQPublisherConfig) validateExchanges(path string) errors.ApplicationError {
 	if c.Exchanges == nil {
 		return errors.NewMissingConfigSectionError(path)
 	}
@@ -102,7 +98,7 @@ func (c *RabbitMQProducerConfig) validateExchanges(path string) errors.Applicati
 	return nil
 }
 
-func (c *RabbitMQProducerConfig) GetExchange(exchange string) (*RabbitMQExchangeConfig, errors.ApplicationError) {
+func (c *RabbitMQPublisherConfig) GetExchange(exchange string) (*RabbitMQExchangeConfig, errors.ApplicationError) {
 	exchangeCfg, ok := c.Exchanges[exchange]
 	if !ok {
 		return nil, errors.NewMissingListConfigValueError("rabbitmq.cfg.exchanges", exchange)
@@ -111,8 +107,8 @@ func (c *RabbitMQProducerConfig) GetExchange(exchange string) (*RabbitMQExchange
 	return exchangeCfg, nil
 }
 
-func getDefaultRabbitMQProducerConfig() *RabbitMQProducerConfig {
-	return &RabbitMQProducerConfig{
+func getDefaultRabbitMQPublisherConfig() *RabbitMQPublisherConfig {
+	return &RabbitMQPublisherConfig{
 		VHost:     rabbitMQDefaultVhost,
 		Host:      rabbitMQDefaultHost,
 		Port:      rabbitMQDefaultPort,
@@ -121,27 +117,27 @@ func getDefaultRabbitMQProducerConfig() *RabbitMQProducerConfig {
 	}
 }
 
-func getRabbitMQProducerConfigFromEnvironment() (*RabbitMQProducerConfig, errors.ApplicationError) {
-	cfg := getDefaultRabbitMQProducerConfig()
+func getRabbitMQPublisherConfigFromEnvironment() (*RabbitMQPublisherConfig, errors.ApplicationError) {
+	cfg := getDefaultRabbitMQPublisherConfig()
 
-	host := GetEnvironmentString("RABBITMQ_PRODUCER_HOST", "")
+	host := GetEnvironmentString("RABBITMQ_PUBLISHER_HOST", "")
 	if host == "" {
 		host = GetEnvironmentString("RABBITMQ_HOST", rabbitMQDefaultHost)
 	}
 
 	if host == "" {
-		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PRODUCER_HOST")
+		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PUBLISHER_HOST")
 	}
 
 	cfg.Host = host
 
-	port, err := GetEnvironmentInt("RABBITMQ_PRODUCER_PORT", 0)
+	port, err := GetEnvironmentInt("RABBITMQ_PUBLISHER_PORT", 0)
 	if err != nil {
 		return nil, err
 	}
 
 	if port < 0 {
-		return nil, errors.NewConfigValueNeedsToBeGreaterZeroError("RABBITMQ_PRODUCER_PORT")
+		return nil, errors.NewConfigValueNeedsToBeGreaterZeroError("RABBITMQ_PUBLISHER_PORT")
 	}
 
 	if port == 0 {
@@ -156,41 +152,41 @@ func getRabbitMQProducerConfigFromEnvironment() (*RabbitMQProducerConfig, errors
 	}
 	cfg.Port = port
 
-	vhost := GetEnvironmentString("RABBITMQ_PRODUCER_VHOST", "")
+	vhost := GetEnvironmentString("RABBITMQ_PUBLISHER_VHOST", "")
 	if vhost == "" {
 		vhost = GetEnvironmentString("RABBITMQ_VHOST", rabbitMQDefaultVhost)
 	}
 
 	if vhost == "" {
-		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PRODUCER_VHOST")
+		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PUBLISHER_VHOST")
 	}
 
 	cfg.VHost = vhost
 
-	username := GetEnvironmentString("RABBITMQ_PRODUCER_USERNAME", "")
+	username := GetEnvironmentString("RABBITMQ_PUBLISHER_USERNAME", "")
 	if username == "" {
 		username = GetEnvironmentString("RABBITMQ_USERNAME", "")
 	}
 
 	if username == "" {
-		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PRODUCER_USERNAME")
+		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PUBLISHER_USERNAME")
 	}
 
 	cfg.Username = username
 
-	password := GetEnvironmentString("RABBITMQ_PRODUCER_PASSWORD", "")
+	password := GetEnvironmentString("RABBITMQ_PUBLISHER_PASSWORD", "")
 	if password == "" {
 		password = GetEnvironmentString("RABBITMQ_PASSWORD", "")
 	}
 
 	if password == "" {
-		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PRODUCER_PASSWORD")
+		return nil, errors.NewMissingEnvironmentVariableError("RABBITMQ_PUBLISHER_PASSWORD")
 	}
 
 	cfg.Password = password
 
-	if HasEnvironment("RABBITMQ_PRODUCER_SSL") {
-		ssl, err := GetEnvironmentBool("RABBITMQ_PRODUCER_SSL", rabbitMQDefaultSsl)
+	if HasEnvironment("RABBITMQ_PUBLISHER_SSL") {
+		ssl, err := GetEnvironmentBool("RABBITMQ_PUBLISHER_SSL", rabbitMQDefaultSsl)
 		if err != nil {
 			return nil, err
 		}

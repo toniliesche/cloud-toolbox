@@ -20,6 +20,8 @@ import (
 )
 
 func TestValidateHttpServerConfigFailsOnEmptyHost(t *testing.T) {
+	t.Parallel()
+
 	cfg := getValidHttpServerConfig()
 	cfg.Host = ""
 
@@ -33,21 +35,9 @@ func TestValidateHttpServerConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
-func TestValidateHttpServerConfigFailsOnZeroPort(t *testing.T) {
-	cfg := getValidHttpServerConfig()
-	cfg.Port = 0
-
-	err := cfg.Validate("http")
-	if !assert.Error(t, err, "did not catch missing port error") {
-		return
-	}
-
-	if !assert.Equal(t, "config value `http.port` must exist", err.Error(), "unexpected error message") {
-		return
-	}
-}
-
 func TestValidateHttpServerConfigFailsOnNegativePort(t *testing.T) {
+	t.Parallel()
+
 	cfg := getValidHttpServerConfig()
 	cfg.Port = -1
 
@@ -62,6 +52,8 @@ func TestValidateHttpServerConfigFailsOnNegativePort(t *testing.T) {
 }
 
 func TestValidateHttpServerConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
+
 	cfg := getValidHttpServerConfig()
 
 	err := cfg.Validate("http")

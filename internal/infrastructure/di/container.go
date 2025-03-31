@@ -29,7 +29,7 @@ type Container struct {
 	HttpServerConfig            *config.HttpServerConfig
 	Logger                      *zerolog.Logger
 	RabbitMQConnectionConsumer  *amqp091.Connection
-	RabbitMQConnectionProducer  *amqp091.Connection
+	RabbitMQConnectionPublisher *amqp091.Connection
 	RabbitMQConfig              *config.RabbitMQConfig
 	RabbitMQConsumer            rmqinterfaces.RabbitMQConsumer
 	Redis                       *redis.Client

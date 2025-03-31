@@ -86,6 +86,6 @@ func NewEventPublisherHandler(container *di.Container) (*EventPublisherHandler, 
 		JsonResponseHandler: infrastructurehttp.JsonResponseHandler{},
 		service:             container.EventPublisher,
 		logger:              container.Logger,
-		eventPublisherName:  container.EventPublisherConfig.EventPublisherName,
+		eventPublisherName:  container.EventPublisherConfig.PublisherName,
 	}, nil
 }

@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateSystemConfigFailsOnMissingLogConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidSystemConfig()
 	cfg.Log = nil
 
@@ -34,6 +35,7 @@ func TestValidateSystemConfigFailsOnMissingLogConfig(t *testing.T) {
 }
 
 func TestValidateSystemConfigFailsOnInvalidLogConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidSystemConfig()
 	cfg.Log.Level = ""
 
@@ -48,6 +50,7 @@ func TestValidateSystemConfigFailsOnInvalidLogConfig(t *testing.T) {
 }
 
 func TestValidateSystemConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidSystemConfig()
 
 	err := cfg.Validate("system")

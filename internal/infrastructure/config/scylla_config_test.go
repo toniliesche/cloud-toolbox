@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateScyllaConfigFailsOnEmptyHost(t *testing.T) {
+	t.Parallel()
 	cfg := getValidScyllaConfig()
 	cfg.Host = ""
 
@@ -29,17 +30,8 @@ func TestValidateScyllaConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
-func TestValidateScyllaConfigFailsOnZeroPort(t *testing.T) {
-	cfg := getValidScyllaConfig()
-	cfg.Port = 0
-
-	err := cfg.Validate("scylla")
-	if assert.Error(t, err, "expected error") {
-		assert.Equal(t, "config value `scylla.port` must exist", err.Error())
-	}
-}
-
 func TestValidateScyllaConfigFailsOnEmptyTable(t *testing.T) {
+	t.Parallel()
 	cfg := getValidScyllaConfig()
 	cfg.Table = ""
 
@@ -50,6 +42,7 @@ func TestValidateScyllaConfigFailsOnEmptyTable(t *testing.T) {
 }
 
 func TestValidateScyllaConfigFailsOnEmptyRegion(t *testing.T) {
+	t.Parallel()
 	cfg := getValidScyllaConfig()
 	cfg.Region = ""
 
@@ -60,6 +53,7 @@ func TestValidateScyllaConfigFailsOnEmptyRegion(t *testing.T) {
 }
 
 func TestValidateScyllaConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidScyllaConfig()
 
 	err := cfg.Validate("scylla")

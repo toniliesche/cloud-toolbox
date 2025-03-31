@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateLogConfigFailsOnMissingLevel(t *testing.T) {
+	t.Parallel()
 	cfg := getValidLogConfig()
 	cfg.Level = ""
 
@@ -34,6 +35,7 @@ func TestValidateLogConfigFailsOnMissingLevel(t *testing.T) {
 }
 
 func TestValidateLogConfigSucceedsOnValidConfig(t *testing.T) {
+	t.Parallel()
 	cfg := getValidLogConfig()
 
 	err := cfg.Validate("log")

@@ -22,6 +22,7 @@ ifneq ("$(wildcard $(CURDIR)/.env)","")
 endif
 
 include $(CURDIR)/make/functions.mk
+include $(CURDIR)/make/ep.mk
 include $(CURDIR)/make/faas.mk
 include $(CURDIR)/make/ft.mk
 include $(CURDIR)/make/rabbitmq.mk
