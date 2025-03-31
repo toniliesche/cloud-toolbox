@@ -37,8 +37,8 @@ LABEL org.opencontainers.image.documentation="https://raw.githubusercontent.com/
 LABEL org.opencontainers.image.source="https://github.com/toniliesche/cloud-toolbox"
 LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.title="Function as a service container"
-LABEL org.opencontainers.image.description="HTTP triggered function as a service container"
+LABEL org.opencontainers.image.title="Function as a Service container"
+LABEL org.opencontainers.image.description="HTTP triggered Function as a Service container"
 ENV HTTP_SERVER_HOST=0.0.0.0
 
 COPY --from=builder /tmp/cloud-toolbox/build/faas /usr/local/bin/faas

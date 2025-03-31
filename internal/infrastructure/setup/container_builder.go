@@ -15,12 +15,10 @@ package setup
 
 import (
 	"cloud-toolbox/internal/infrastructure/config"
-	"cloud-toolbox/internal/infrastructure/config/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/log"
 	"context"
-	"fmt"
 	"github.com/rs/zerolog"
 )
 
@@ -28,24 +26,11 @@ const ContainerBuilderLogIdentifier = "ContainerBuilder"
 
 type ContainerBuilder struct {
 	application string
+	epConfig    *config.EventPublisherConfig
 	faasConfig  *config.FunctionAsAServiceConfig
 	ftConfig    *config.FunctionTriggerConfig
 	logger      *zerolog.Logger
 	context     context.Context
-}
-
-func (b *ContainerBuilder) SetFaasConfig(cfg *config.FunctionAsAServiceConfig) *ContainerBuilder {
-	b.faasConfig = cfg
-	b.application = "faas"
-
-	return b
-}
-
-func (b *ContainerBuilder) SetFtConfig(cfg *config.FunctionTriggerConfig) *ContainerBuilder {
-	b.ftConfig = cfg
-	b.application = "ft"
-
-	return b
 }
 
 func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
@@ -70,33 +55,9 @@ func (b *ContainerBuilder) Build() (*di.Container, errors.ApplicationError) {
 
 	b.logger = container.Logger
 
-	switch b.application {
-	case "faas":
-		b.logger.Debug().
-			Msgf("[%s] Setting up `FunctionAsAService` components", ContainerBuilderLogIdentifier)
-		if err := b.setupFaas(container); err != nil {
-			b.logger.Trace().
-				Err(err).
-				Msgf("[%s] Error during setup of `FunctionAsAService` components", ContainerBuilderLogIdentifier)
-			return nil, b.logError(errors.NewApplicationSetupError("Function as a Service", err))
-		}
-		b.logger.Debug().
-			Msgf("[%s] `FunctionAsAService` component setup complete", ContainerBuilderLogIdentifier)
-	case "ft":
-		b.logger.Debug().
-			Msgf("[%s] Setting up `FunctionTrigger` components", ContainerBuilderLogIdentifier)
-		if err := b.setupFt(container); err != nil {
-			b.logger.Trace().
-				Err(err).
-				Msgf("[%s] Error during setup of `FunctionTrigger` components", ContainerBuilderLogIdentifier)
-			return nil, b.logError(errors.NewApplicationSetupError("Function Trigger", err))
-		}
-		b.logger.Debug().
-			Msgf("[%s] `FunctionTrigger` component setup complete", ContainerBuilderLogIdentifier)
-	default:
-		b.logger.Trace().
-			Msgf("[%s] Unknown application type: %s", ContainerBuilderLogIdentifier, b.application)
-		return nil, b.logError(errors.NewApplicationSetupError("Generic", fmt.Errorf("no application config provided")))
+	err := b.setupApplication(container)
+	if err != nil {
+		return nil, err
 	}
 
 	b.logger.Debug().
@@ -122,34 +83,6 @@ func (b *ContainerBuilder) logError(err errors.ApplicationError) errors.Applicat
 		Msgf("[%s] Error during container setup", ContainerBuilderLogIdentifier)
 
 	return err
-}
-
-func (b *ContainerBuilder) getApplicationConfig() (interfaces.ApplicationConfig, errors.ApplicationError) {
-	switch b.application {
-	case "faas":
-		return b.faasConfig, nil
-	case "ft":
-		return b.ftConfig, nil
-	default:
-		return nil, errors.NewContainerConfigMissingError()
-	}
-}
-
-func (b *ContainerBuilder) getComponentType() string {
-	switch b.application {
-	case "faas":
-		return "function-as-a-service"
-	case "ft":
-		return "function-trigger"
-	default:
-		return "unknown"
-	}
-}
-
-func (b *ContainerBuilder) SetContext(ctx context.Context) *ContainerBuilder {
-	b.context = ctx
-
-	return b
 }
 
 func NewBuilder() *ContainerBuilder {

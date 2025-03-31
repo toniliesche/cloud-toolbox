@@ -18,6 +18,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/log"
+	"context"
 )
 
 func (b *ContainerBuilder) setupBasics(container *di.Container) errors.ApplicationError {
@@ -72,4 +73,10 @@ func (b *ContainerBuilder) setupLogger(container *di.Container) errors.Applicati
 		Msgf("[%s] Logger initialized", ContainerBuilderLogIdentifier)
 
 	return nil
+}
+
+func (b *ContainerBuilder) SetContext(ctx context.Context) *ContainerBuilder {
+	b.context = ctx
+
+	return b
 }

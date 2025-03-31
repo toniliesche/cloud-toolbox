@@ -19,6 +19,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/rabbitmq"
 	"cloud-toolbox/internal/infrastructure/rabbitmq/connectors"
+	"cloud-toolbox/internal/infrastructure/rabbitmq/function-trigger"
 )
 
 func (b *ContainerBuilder) setupFt(container *di.Container) errors.ApplicationError {
@@ -68,7 +69,7 @@ func (b *ContainerBuilder) setupFt(container *di.Container) errors.ApplicationEr
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)
-	if container.FunctionTriggerHandler, err = rabbitmq.NewFunctionTriggerHandler(container); err != nil {
+	if container.FunctionTriggerHandler, err = function_trigger.NewFunctionTriggerHandler(container); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error initializing `FunctionTrigger` RabbitMQ handler", ContainerBuilderLogIdentifier)

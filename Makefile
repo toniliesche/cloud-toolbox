@@ -100,6 +100,9 @@ build-docker-release-%: set-version-release set-commit
 build-docker-%: set-version-%
 	$(foreach project, $(PROJECTS), $(MAKE) build-docker-$*-$(project);)
 
+build-dev-docker-ep:
+	$(MAKE) build-dev-docker-event-publisher
+
 build-dev-docker-faas:
 	$(MAKE) build-dev-docker-function-as-a-service
 

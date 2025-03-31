@@ -22,7 +22,7 @@ import (
 type JsonResponseHandler struct {
 }
 
-func (h *JsonResponseHandler) sendJsonResponse(writer http.ResponseWriter, request *http.Request, statusCode int, data interface{}) {
+func (h *JsonResponseHandler) SendJsonResponse(writer http.ResponseWriter, request *http.Request, statusCode int, data interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 
 	var msg string
@@ -40,11 +40,11 @@ func (h *JsonResponseHandler) sendJsonResponse(writer http.ResponseWriter, reque
 
 	writer.WriteHeader(statusCode)
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		h.sendErrorResponse(writer, request, http.StatusInternalServerError, err.Error())
+		h.SendErrorResponse(writer, request, http.StatusInternalServerError, err.Error())
 	}
 }
 
-func (h *JsonResponseHandler) sendErrorResponse(writer http.ResponseWriter, request *http.Request, statusCode int, message string) {
+func (h *JsonResponseHandler) SendErrorResponse(writer http.ResponseWriter, request *http.Request, statusCode int, message string) {
 	writer.Header().Set("Content-Type", "application/json")
 
 	response := models.JsonResponse{

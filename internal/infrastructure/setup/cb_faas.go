@@ -23,6 +23,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
+	"cloud-toolbox/internal/infrastructure/http/function-as-a-service"
 )
 
 func (b *ContainerBuilder) setupFaas(container *di.Container) errors.ApplicationError {
@@ -123,7 +124,7 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 
 	b.logger.Trace().
 		Msgf("[%s] Initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if container.FunctionAsAServiceHandler, err = http.NewFunctionAsAServiceHandler(container); err != nil {
+	if container.FunctionAsAServiceHandler, err = function_as_a_service.NewFunctionAsAServiceHandler(container); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error initializing `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)

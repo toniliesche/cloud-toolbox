@@ -11,12 +11,13 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package http
+package function_as_a_service
 
 import (
 	"cloud-toolbox/internal/application/faas/interfaces"
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
+	http2 "cloud-toolbox/internal/infrastructure/http"
 	"cloud-toolbox/internal/infrastructure/http/models"
 	"fmt"
 	"github.com/rs/zerolog"
@@ -27,8 +28,8 @@ import (
 const FunctionAsAServiceHandlerLogIdentifier = "FunctionAsAServiceHandler"
 
 type FunctionAsAServiceHandler struct {
-	Handler
-	JsonResponseHandler
+	http2.Handler
+	http2.JsonResponseHandler
 	service      interfaces.FunctionAsAService
 	logger       *zerolog.Logger
 	functionName string
@@ -52,7 +53,7 @@ func (h *FunctionAsAServiceHandler) GetRoutes() []*models.Route {
 func (h *FunctionAsAServiceHandler) runFunction(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
-		h.sendErrorResponse(writer, request, http.StatusBadRequest, err.Error())
+		h.SendErrorResponse(writer, request, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -62,13 +63,13 @@ func (h *FunctionAsAServiceHandler) runFunction(writer http.ResponseWriter, requ
 
 	response := h.service.RunFunction(body)
 
-	h.sendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
+	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
 
 func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWriter, request *http.Request) {
 	executionId, ok := h.GetPathVar(request, "executionId")
 	if !ok {
-		h.sendErrorResponse(writer, request, http.StatusBadRequest, "Execution ID missing")
+		h.SendErrorResponse(writer, request, http.StatusBadRequest, "Execution ID missing")
 		return
 	}
 
@@ -78,7 +79,7 @@ func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWrit
 
 	response := h.service.GetExecutionStatus(executionId)
 
-	h.sendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
+	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
 
 func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceHandler, domainerrors.ApplicationError) {
@@ -103,7 +104,7 @@ func NewFunctionAsAServiceHandler(container *di.Container) (*FunctionAsAServiceH
 	}
 
 	return &FunctionAsAServiceHandler{
-		JsonResponseHandler: JsonResponseHandler{},
+		JsonResponseHandler: http2.JsonResponseHandler{},
 		service:             container.FunctionAsAServiceService,
 		logger:              container.Logger,
 		functionName:        container.FunctionAsAServiceConfig.FunctionName,

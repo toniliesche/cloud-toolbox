@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	httpServerDefaultHost = "localhost"
+	httpServerDefaultHost = "0.0.0.0"
 	httpServerDefaultPort = 8080
 )
 

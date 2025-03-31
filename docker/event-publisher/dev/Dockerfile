@@ -23,7 +23,7 @@ WORKDIR /tmp/cloud-toolbox
 ARG BUILDVER
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    make build-function-trigger && \
+    make build-event-publisher && \
     make build-hello-world-faas
 
 FROM debian:${DEBIANVER}-slim
@@ -31,16 +31,16 @@ FROM debian:${DEBIANVER}-slim
 ARG BUILDVER
 ARG COMMIT
 LABEL org.opencontainers.image.authors="Toni Liesche <dev@toniliesche.de>"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/tliesche/function-trigger"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/tliesche/event-publisher"
 LABEL org.opencontainers.image.documentation="https://raw.githubusercontent.com/toniliesche/cloud-toolbox/refs/heads/develop/README.md"
 LABEL org.opencontainers.image.source="https://github.com/toniliesche/cloud-toolbox"
 LABEL org.opencontainers.image.version="${BUILDVER} <${COMMIT}>"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.title="Function Trigger container"
-LABEL org.opencontainers.image.description="RabbitMQ triggered Function Trigger container"
+LABEL org.opencontainers.image.title="Event Publisher container"
+LABEL org.opencontainers.image.description="HTTP triggered Event Publisher container"
 ENV HTTP_SERVER_HOST=0.0.0.0
 
-COPY --from=builder /tmp/cloud-toolbox/build/function-trigger /usr/local/bin/function-trigger
+COPY --from=builder /tmp/cloud-toolbox/build/event-publisher /usr/local/bin/event-publisher
 COPY --from=builder /tmp/cloud-toolbox/build/hello-world-faas /usr/local/bin/hello-world-faas
 
-CMD [ "/usr/local/bin/function-trigger" ]
+CMD [ "/usr/local/bin/event-publisher" ]
