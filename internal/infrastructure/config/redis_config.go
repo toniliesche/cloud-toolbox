@@ -42,7 +42,7 @@ func (c *RedisConfig) Validate(path string) error {
 	}
 
 	if c.Database < 0 {
-		return errors.NewConfigValueNeedsToBeGreaterZeroError(fmt.Sprintf("%s.database", path))
+		return errors.NewConfigValueNeedsToBeGreaterThanOrEqualValueError(fmt.Sprintf("%s.database", path), 0)
 	}
 
 	return nil

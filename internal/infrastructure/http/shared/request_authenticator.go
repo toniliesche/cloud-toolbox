@@ -11,13 +11,16 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package models
+package shared
 
-import "net/http"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+	"net/http"
+)
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+type RequestAuthenticator struct {
+}
+
+func (r RequestAuthenticator) AuthenticateRequest(request *http.Request) errors.ApplicationError {
+	return nil
 }

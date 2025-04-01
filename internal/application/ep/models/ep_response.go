@@ -13,11 +13,32 @@
 
 package models
 
-import "net/http"
+type EpResponse struct {
+	EventId string
+	Status  int
+	Data    map[string]string
+}
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+func (r *EpResponse) GetStatusCode() int {
+	return r.Status
+}
+
+func (r *EpResponse) GetBody() interface{} {
+	if _, ok := r.Data["event_id"]; !ok {
+		r.Data["event_id"] = r.EventId
+	}
+
+	return r.Data
+}
+
+func NewEpResponse(eventId string, status int, data map[string]string) *EpResponse {
+	if data == nil {
+		data = make(map[string]string)
+	}
+
+	return &EpResponse{
+		EventId: eventId,
+		Status:  status,
+		Data:    data,
+	}
 }

@@ -18,6 +18,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
 	infrastructurehttp "cloud-toolbox/internal/infrastructure/http"
+	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
 	"cloud-toolbox/internal/infrastructure/http/models"
 	"fmt"
 	"github.com/rs/zerolog"
@@ -35,12 +36,17 @@ type EventPublisherHandler struct {
 	eventPublisherName string
 }
 
+func (h *EventPublisherHandler) GetAuthenticator() httpinterfaces.RequestAuthenticator {
+	return nil
+}
+
 func (h *EventPublisherHandler) GetRoutes() []*models.Route {
 	return []*models.Route{
 		{
 			fmt.Sprintf("/cloud-toolbox/ep/%s", h.eventPublisherName),
 			[]string{"POST"},
 			h.publishEvent,
+			"publish-event",
 		},
 	}
 }
@@ -56,7 +62,7 @@ func (h *EventPublisherHandler) publishEvent(writer http.ResponseWriter, request
 		Bytes("body", body).
 		Msgf("[%s] Handling publish event rquest", EventPublisherHandlerLogIdentifier)
 
-	response := models.NewErrorResponse("not-found", domainerrors.NewEndpointNotImplementedError(request.RequestURI))
+	response := h.service.PublishEvent(body)
 
 	h.SendJsonResponse(writer, request, response.GetStatusCode(), response.GetBody())
 }
@@ -80,6 +86,10 @@ func NewEventPublisherHandler(container *di.Container) (*EventPublisherHandler, 
 
 	if container.Logger == nil {
 		return nil, domainerrors.NewResolveDependencyError(EventPublisherHandlerLogIdentifier, "Logger")
+	}
+
+	if container.EventPublisher == nil {
+		return nil, domainerrors.NewResolveDependencyError(EventPublisherHandlerLogIdentifier, "EventPublisher")
 	}
 
 	return &EventPublisherHandler{

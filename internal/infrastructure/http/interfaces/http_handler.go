@@ -19,4 +19,5 @@ import (
 
 type HttpHandler interface {
 	GetRoutes() []*models.Route
+	GetAuthenticator() RequestAuthenticator
 }

@@ -29,6 +29,10 @@ func (c *LogConfig) Validate(path string) errors.ApplicationError {
 		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.level", path))
 	}
 
+	if c.Path == "" {
+		return errors.NewMissingConfigValueError(fmt.Sprintf("%s.path", path))
+	}
+
 	return nil
 }
 
@@ -40,7 +44,7 @@ func getLogConfigFromEnvironment() (*LogConfig, errors.ApplicationError) {
 
 	return &LogConfig{
 		DevMode: devMode,
-		Path:    GetEnvironmentString("LOG_PATH", ""),
+		Path:    GetEnvironmentString("LOG_PATH", "/dev/stdout"),
 		Level:   GetEnvironmentString("LOG_LEVEL", "info"),
 	}, nil
 }

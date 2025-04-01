@@ -46,8 +46,11 @@ func main() {
 	}
 
 	failed := make([]string, 0)
-	for _, record := range records {
-		failed = append(failed, record.GetRecordIdentifier())
+
+	if os.Getenv("FAIL_ALL") == "true" {
+		for _, record := range records {
+			failed = append(failed, record.GetRecordIdentifier())
+		}
 	}
 
 	faasResult := &faasResult{

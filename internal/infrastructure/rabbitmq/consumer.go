@@ -26,9 +26,7 @@ import (
 	"sync"
 )
 
-const (
-	ConsumerLogIdentifier = "RabbitMQConsumer"
-)
+const ConsumerLogIdentifier = "RabbitMQConsumer"
 
 type Consumer struct {
 	cfg          *config.RabbitMQConfig

@@ -13,8 +13,10 @@
 
 package interfaces
 
+import "cloud-toolbox/internal/application/shared/model/interfaces"
+
 type FaasRecord interface {
-	Validatable
+	interfaces.Validatable
 	GetRecordIdentifier() string
 	GetMetaInformation() map[string]string
 	GetPayload() string

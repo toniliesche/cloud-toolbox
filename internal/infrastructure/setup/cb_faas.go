@@ -133,7 +133,7 @@ func (b *ContainerBuilder) setupFaas(container *di.Container) errors.Application
 
 	b.logger.Trace().
 		Msgf("[%s] Registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)
-	if err = container.HttpServer.RegisterRoutes(container.FunctionAsAServiceHttpHandler); err != nil {
+	if err = container.HttpServer.RegisterHandler(container.FunctionAsAServiceHttpHandler); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error registering routes for `FunctionAsAService` http handler", ContainerBuilderLogIdentifier)

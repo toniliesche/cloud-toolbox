@@ -38,7 +38,7 @@ type FunctionExecutionRepository struct {
 
 func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.FunctionExecution, errors.ApplicationError) {
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
 	get := &dynamodb.GetItemInput{
@@ -54,7 +54,7 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 	if err := req.Send(); err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
 		return nil, errors.NewGenericError(err)
@@ -62,7 +62,7 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 
 	if out.Item == nil {
 		f.logger.Trace().
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Function execution not found", FunctionExecutionRepositoryLogIdentifier)
 
 		return nil, errors.NewItemNotFoundError(executionId)
@@ -73,7 +73,7 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 	result, _ := json.Marshal(fn)
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("json", string(result)).
 		Msgf("[%s] Function execution found", FunctionExecutionRepositoryLogIdentifier)
 
@@ -85,7 +85,7 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 
 	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("ttl", ttl).
 		Msgf("[%s] Saving error", FunctionExecutionRepositoryLogIdentifier)
 
@@ -119,14 +119,14 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 	if err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving error", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Error saved", FunctionExecutionRepositoryLogIdentifier)
 
 	return nil
@@ -135,7 +135,7 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExecution) errors.ApplicationError {
 	ttl := fmt.Sprintf("%d", time.Now().Add(f.timeToLive).Unix())
 	f.logger.Trace().
-		Str("executionId", function.Id).
+		Str("execution-id", function.Id).
 		Str("ttl", ttl).
 		Msgf("[%s] Saving function", FunctionExecutionRepositoryLogIdentifier)
 
@@ -153,14 +153,14 @@ func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExec
 	if err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", function.Id).
+			Str("execution-id", function.Id).
 			Msgf("[%s] Error saving function", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
-		Str("executionId", function.Id).
+		Str("execution-id", function.Id).
 		Msgf("[%s] Function saved", FunctionExecutionRepositoryLogIdentifier)
 
 	return nil
@@ -171,7 +171,7 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 
 	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("ttl", ttl).
 		Msgf("[%s] Saving output", FunctionExecutionRepositoryLogIdentifier)
 
@@ -205,14 +205,14 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 	if err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving output", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Output saved", FunctionExecutionRepositoryLogIdentifier)
 
 	return nil
@@ -223,7 +223,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 
 	ttl := fmt.Sprintf("%d", timeObj.Add(f.timeToLive).Unix())
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("ttl", ttl).
 		Str("status", status).
 		Msgf("[%s] Updating status", FunctionExecutionRepositoryLogIdentifier)
@@ -275,14 +275,14 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 	if err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error updating status", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(err)
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Status updated", FunctionExecutionRepositoryLogIdentifier)
 
 	return nil

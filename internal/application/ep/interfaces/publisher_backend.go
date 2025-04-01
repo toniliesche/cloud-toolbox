@@ -11,13 +11,13 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package models
+package interfaces
 
-import "net/http"
+import (
+	"cloud-toolbox/internal/application/ep/models"
+	"cloud-toolbox/internal/infrastructure/errors"
+)
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+type PublisherBackend interface {
+	PublishEvent(event *models.EpRequest) errors.ApplicationError
 }

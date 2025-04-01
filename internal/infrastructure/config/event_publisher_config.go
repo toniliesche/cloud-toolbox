@@ -24,6 +24,7 @@ type EventPublisherConfig struct {
 	ApplicationConfig
 	HttpServer       *HttpServerConfig `yaml:"http"`
 	RabbitMQ         *RabbitMQConfig   `yaml:"rabbitmq"`
+	RabbitMQTopic    string            `json:"rabbitmq_topic"`
 	PublisherName    string            `yaml:"publisher_name"`
 	PublisherBackend string            `yaml:"publisher_backend"`
 }
@@ -65,6 +66,9 @@ func (c *EventPublisherConfig) Validate() errors.ApplicationError {
 		}
 		if err := c.RabbitMQ.Validate("rabbitmq", RabbitMQModePublisher); err != nil {
 			return errors.NewValidateConfigSectionError("rabbitmq", err)
+		}
+		if c.RabbitMQTopic == "" {
+			return errors.NewMissingConfigValueError("rabbitmq_topic")
 		}
 	}
 
@@ -137,11 +141,16 @@ func getEventPublisherConfigFromEnvironment() (*EventPublisherConfig, errors.App
 	}
 
 	var rabbitMQConfig *RabbitMQConfig
+	var rabbitMQTopic string
 	switch eventPublisherBackend {
 	case "rabbitmq":
 		rabbitMQConfig, err = getRabbitMQConfigFromEnvironment(RabbitMQModePublisher)
 		if err != nil {
 			return nil, err
+		}
+		rabbitMQTopic = GetEnvironmentString("EVENT_PUBLISHER_RABBITMQ_TOPIC", "")
+		if rabbitMQTopic == "" {
+			return nil, errors.NewMissingEnvironmentVariableError("EVENT_PUBLISHER_RABBITMQ_TOPIC")
 		}
 	}
 
@@ -151,6 +160,7 @@ func getEventPublisherConfigFromEnvironment() (*EventPublisherConfig, errors.App
 		},
 		HttpServer:       httpConfig,
 		RabbitMQ:         rabbitMQConfig,
+		RabbitMQTopic:    rabbitMQTopic,
 		PublisherName:    eventPublisherName,
 		PublisherBackend: eventPublisherBackend,
 	}, nil

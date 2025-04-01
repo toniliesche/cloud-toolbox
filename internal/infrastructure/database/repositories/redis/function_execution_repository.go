@@ -36,14 +36,14 @@ type FunctionExecutionRepository struct {
 
 func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.FunctionExecution, errors.ApplicationError) {
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
 	fn := f.redis.JSONGet(f.context, fmt.Sprintf("faas-%s", executionId), "$")
 	if fn.Err() != nil {
 		f.logger.Trace().
 			Err(fn.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error getting function execution", FunctionExecutionRepositoryLogIdentifier)
 
 		return nil, errors.NewGenericError(fn.Err())
@@ -51,13 +51,13 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 
 	function := make([]*FunctionExecution, 0)
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("json", fn.Val()).
 		Msgf("[%s] Function execution retrieved", FunctionExecutionRepositoryLogIdentifier)
 	if err := json.Unmarshal([]byte(fn.Val()), &function); err != nil {
 		f.logger.Trace().
 			Err(err).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Str("json", fn.Val()).
 			Msgf("[%s] Error unmarshalling function execution", FunctionExecutionRepositoryLogIdentifier)
 
@@ -66,14 +66,14 @@ func (f *FunctionExecutionRepository) GetFunction(executionId string) (*models.F
 
 	if len(function) == 0 {
 		f.logger.Trace().
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Function execution not found", FunctionExecutionRepositoryLogIdentifier)
 
 		return nil, errors.NewItemNotFoundError(executionId)
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Function execution found", FunctionExecutionRepositoryLogIdentifier)
 
 	return function[0].ToModel(), nil
@@ -83,14 +83,14 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 	timeObj := time.Now()
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Saving error", FunctionExecutionRepositoryLogIdentifier)
 
 	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", executionId), "$.error", fmt.Sprintf(`"%s"`, error))
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving error", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
@@ -100,14 +100,14 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving error", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Error saved", FunctionExecutionRepositoryLogIdentifier)
 
 	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
@@ -117,21 +117,21 @@ func (f *FunctionExecutionRepository) SaveError(executionId string, error string
 
 func (f *FunctionExecutionRepository) SaveFunction(function *models.FunctionExecution) errors.ApplicationError {
 	f.logger.Trace().
-		Str("executionId", function.Id).
+		Str("execution-id", function.Id).
 		Msgf("[%s] Saving function", FunctionExecutionRepositoryLogIdentifier)
 
 	result := f.redis.JSONSet(f.context, fmt.Sprintf("faas-%s", function.Id), "$", function)
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", function.Id).
+			Str("execution-id", function.Id).
 			Msgf("[%s] Error saving function", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
 	}
 
 	f.logger.Trace().
-		Str("executionId", function.Id).
+		Str("execution-id", function.Id).
 		Msgf("[%s] Function saved", FunctionExecutionRepositoryLogIdentifier)
 
 	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", function.Id), f.timeToLive)
@@ -143,13 +143,13 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 	timeObj := time.Now()
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Saving output", FunctionExecutionRepositoryLogIdentifier)
 
 	var js interface{}
 	if json.Unmarshal([]byte(output), &js) != nil {
 		f.logger.Trace().
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Output is not JSON", FunctionExecutionRepositoryLogIdentifier)
 
 		output = fmt.Sprintf(`"%s"`, output)
@@ -159,7 +159,7 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving output", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
@@ -169,13 +169,13 @@ func (f *FunctionExecutionRepository) SaveOutput(executionId string, output stri
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error saving output", FunctionExecutionRepositoryLogIdentifier)
 		return errors.NewGenericError(result.Err())
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Output saved", FunctionExecutionRepositoryLogIdentifier)
 
 	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)
@@ -187,7 +187,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 	timeObj := time.Now()
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Str("status", status).
 		Msgf("[%s] Updating status", FunctionExecutionRepositoryLogIdentifier)
 
@@ -195,7 +195,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error updating updated date", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
@@ -209,7 +209,7 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 	if appendResult.Err() != nil {
 		f.logger.Trace().
 			Err(appendResult.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error updating status list", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(appendResult.Err())
@@ -219,14 +219,14 @@ func (f *FunctionExecutionRepository) UpdateStatus(executionId string, status st
 	if result.Err() != nil {
 		f.logger.Trace().
 			Err(result.Err()).
-			Str("executionId", executionId).
+			Str("execution-id", executionId).
 			Msgf("[%s] Error updating status", FunctionExecutionRepositoryLogIdentifier)
 
 		return errors.NewGenericError(result.Err())
 	}
 
 	f.logger.Trace().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Status updated", FunctionExecutionRepositoryLogIdentifier)
 
 	f.redis.Expire(f.context, fmt.Sprintf("faas-%s", executionId), f.timeToLive)

@@ -18,7 +18,7 @@ services:
     ports:
       - "${EP_HOST_PORT}:${EP_PORT}"
     environment:
-      - CLOUD_TOOLBOX_COMPONENT_ID=ep-${EP_FUNCTION}
+      - CLOUD_TOOLBOX_COMPONENT_ID=ep-${EP_PUBLISHER}
       - EVENT_PUBLISHER_PUBLISHER_NAME=${FAAS_FUNCTION}
       - EVENT_PUBLISHER_BACKEND=rabbitmq
       - RABBITMQ_PUBLISHER_VHOST=${FT_RABBITMQ_VHOST}
@@ -26,7 +26,8 @@ services:
       - RABBITMQ_PUBLISHER_PORT=${RABBITMQ_PORT}
       - RABBITMQ_PUBLISHER_USERNAME=${EP_RABBITMQ_USER}
       - RABBITMQ_PUBLISHER_PASSWORD=${EP_RABBITMQ_PASSWORD}
-      - RABBITMQ_EXCHANGES=trigger=${FT_RABBITMQ_EXCHANGE}
+      - RABBITMQ_EXCHANGES=default=${FT_RABBITMQ_EXCHANGE}
+      - EVENT_PUBLISHER_RABBITMQ_TOPIC=${FT_RABBITMQ_QUEUE}
       - LOG_DEV_MODE=${LOG_DEV_MODE}
       - LOG_LEVEL=${LOG_LEVEL}
       - LOG_PATH=/dev/stdout
@@ -55,6 +56,7 @@ services:
       - LOG_DEV_MODE=${LOG_DEV_MODE}
       - LOG_LEVEL=${LOG_LEVEL}
       - LOG_PATH=/dev/stdout
+      - FAIL_ALL=false
 
   ft:
     image: tliesche/function-trigger:develop

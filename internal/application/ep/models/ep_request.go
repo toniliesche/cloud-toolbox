@@ -13,11 +13,22 @@
 
 package models
 
-import "net/http"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+	"time"
+)
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+type EpRequest struct {
+	CorrelationId string    `json:"correlation_id,omitempty"`
+	Event         string    `json:"event"`
+	EventId       string    `json:"event_id,omitempty"`
+	Timestamp     time.Time `json:"timestamp,omitempty"`
+}
+
+func (e *EpRequest) Validate() errors.ApplicationError {
+	if e.Event == "" {
+		return errors.NewMissingRequestFieldError("Event is required")
+	}
+
+	return nil
 }

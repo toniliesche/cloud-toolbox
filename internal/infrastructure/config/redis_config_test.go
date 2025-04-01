@@ -30,6 +30,28 @@ func TestValidateRedisConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
+func TestValidateRedisConfigFailsOnInvalidPort(t *testing.T) {
+	t.Parallel()
+	cfg := getValidRedisConfig()
+	cfg.Port = -1
+
+	err := cfg.Validate("redis")
+	if assert.Error(t, err, "expected error") {
+		assert.Equal(t, "config value `redis.port` must be greater than `0`", err.Error())
+	}
+}
+
+func TestValidateRedisConfigFailsOnInvalidDatabase(t *testing.T) {
+	t.Parallel()
+	cfg := getValidRedisConfig()
+	cfg.Database = -1
+
+	err := cfg.Validate("redis")
+	if assert.Error(t, err, "expected error") {
+		assert.Equal(t, "config value `redis.database` must be greater than or equal to `0`", err.Error())
+	}
+}
+
 func TestValidateRedisConfigSucceedsOnValidConfig(t *testing.T) {
 	t.Parallel()
 	cfg := getValidRedisConfig()

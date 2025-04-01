@@ -283,23 +283,27 @@ func (f *FunctionAsAService) runFunction(executionId string, request *models.Faa
 
 func NewFunctionAsAService(container *di.Container) (faasinterfaces.FunctionAsAService, domainerrors.ApplicationError) {
 	if container == nil {
-		return nil, domainerrors.NewContainerMissingError("FunctionAsAService")
+		return nil, domainerrors.NewContainerMissingError(FunctionAsAServiceLogIdentifier)
 	}
 
 	if container.Context == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "Context")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceLogIdentifier, "Context")
 	}
 
 	if container.FunctionAsAServiceConfig == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "FunctionAsAServiceConfig")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceLogIdentifier, "FunctionAsAServiceConfig")
+	}
+
+	if err := container.FunctionAsAServiceConfig.Validate(); err != nil {
+		return nil, domainerrors.NewInvalidConfigError(FunctionAsAServiceLogIdentifier, err)
 	}
 
 	if container.Logger == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "Logger")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceLogIdentifier, "Logger")
 	}
 
 	if container.FunctionRegistry == nil {
-		return nil, domainerrors.NewResolveDependencyError("FunctionAsAService", "FunctionRegistry")
+		return nil, domainerrors.NewResolveDependencyError(FunctionAsAServiceLogIdentifier, "FunctionRegistry")
 	}
 
 	return &FunctionAsAService{

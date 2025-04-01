@@ -13,11 +13,37 @@
 
 package models
 
-import "net/http"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+)
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+type EpErrorResponse struct {
+	EventId string
+	Status  string
+	Err     errors.ApplicationError
+}
+
+func (r *EpErrorResponse) GetStatusCode() int {
+	return errors.MapToStatusCode(r.Err.Code())
+}
+
+func (r *EpErrorResponse) GetBody() interface{} {
+	body := map[string]interface{}{
+		"status": r.Status,
+		"error":  r.Err.Error(),
+	}
+
+	if r.EventId != "" {
+		body["event_id"] = r.EventId
+	}
+
+	return body
+}
+
+func NewEpErrorResponse(eventId string, errorCode string, err errors.ApplicationError) *EpErrorResponse {
+	return &EpErrorResponse{
+		EventId: eventId,
+		Status:  errorCode,
+		Err:     err,
+	}
 }

@@ -34,7 +34,7 @@ func (r *FaasErrorResponse) GetBody() interface{} {
 	}
 
 	if r.ExecutionId != "" {
-		body["executionId"] = r.ExecutionId
+		body["execution_id"] = r.ExecutionId
 	}
 
 	return body

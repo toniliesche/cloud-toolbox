@@ -84,15 +84,3 @@ func (b *ContainerBuilder) logError(err errors.ApplicationError) errors.Applicat
 
 	return err
 }
-
-func (b *ContainerBuilder) setupEpRabbitMQ(container *di.Container) errors.ApplicationError {
-	b.logger.Trace().
-		Msgf("[%s] Retrieving RabbitMQConfig from `EventPublisher` config", ContainerBuilderLogIdentifier)
-	container.RabbitMQConfig = b.epConfig.RabbitMQ
-
-	return nil
-}
-
-func NewBuilder() *ContainerBuilder {
-	return &ContainerBuilder{}
-}

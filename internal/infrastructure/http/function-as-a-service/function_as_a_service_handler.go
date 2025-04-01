@@ -18,6 +18,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	domainerrors "cloud-toolbox/internal/infrastructure/errors"
 	infrastructurehttp "cloud-toolbox/internal/infrastructure/http"
+	httpinterfaces "cloud-toolbox/internal/infrastructure/http/interfaces"
 	"cloud-toolbox/internal/infrastructure/http/models"
 	"fmt"
 	"github.com/rs/zerolog"
@@ -35,17 +36,23 @@ type FunctionAsAServiceHandler struct {
 	functionName       string
 }
 
+func (h *FunctionAsAServiceHandler) GetAuthenticator() httpinterfaces.RequestAuthenticator {
+	return nil
+}
+
 func (h *FunctionAsAServiceHandler) GetRoutes() []*models.Route {
 	return []*models.Route{
 		{
 			fmt.Sprintf("/cloud-toolbox/faas/%s", h.functionName),
 			[]string{"POST"},
 			h.runFunction,
+			"run-function",
 		},
 		{
 			fmt.Sprintf("/cloud-toolbox/faas/%s/status/{executionId}", h.functionName),
 			[]string{"GET"},
 			h.queryFunctionStatus,
+			"query-function-status",
 		},
 	}
 }
@@ -74,7 +81,7 @@ func (h *FunctionAsAServiceHandler) queryFunctionStatus(writer http.ResponseWrit
 	}
 
 	h.logger.Info().
-		Str("executionId", executionId).
+		Str("execution-id", executionId).
 		Msgf("[%s] Handling get function status request", FunctionAsAServiceHandlerLogIdentifier)
 
 	response := h.functionAsAService.GetExecutionStatus(executionId)

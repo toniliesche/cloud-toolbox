@@ -34,6 +34,21 @@ func TestValidateLogConfigFailsOnMissingLevel(t *testing.T) {
 	}
 }
 
+func TestValidateLogConfigFailsOnMissingPath(t *testing.T) {
+	t.Parallel()
+	cfg := getValidLogConfig()
+	cfg.Path = ""
+
+	err := cfg.Validate("log")
+	if !assert.Error(t, err, "did not catch missing path error") {
+		return
+	}
+
+	if !assert.Equal(t, "config value `log.path` must exist", err.Error(), "unexpected error message") {
+		return
+	}
+}
+
 func TestValidateLogConfigSucceedsOnValidConfig(t *testing.T) {
 	t.Parallel()
 	cfg := getValidLogConfig()
@@ -47,5 +62,6 @@ func TestValidateLogConfigSucceedsOnValidConfig(t *testing.T) {
 func getValidLogConfig() *config.LogConfig {
 	return &config.LogConfig{
 		Level: "info",
+		Path:  "/dev/stdout",
 	}
 }

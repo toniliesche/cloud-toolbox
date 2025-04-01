@@ -27,6 +27,7 @@ include $(CURDIR)/make/faas.mk
 include $(CURDIR)/make/ft.mk
 include $(CURDIR)/make/rabbitmq.mk
 include $(CURDIR)/make/scylladb.mk
+include $(CURDIR)/make/test.mk
 include $(CURDIR)/make/versioning.mk
 
 build-docker-rc-%: set-version-rc set-commit

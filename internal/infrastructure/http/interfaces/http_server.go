@@ -20,6 +20,6 @@ import (
 
 type HttpServer interface {
 	interfaces.ShutdownService
-	RegisterRoutes(handler HttpHandler) errors.ApplicationError
+	RegisterHandler(handler HttpHandler) errors.ApplicationError
 	Run() errors.ApplicationError
 }

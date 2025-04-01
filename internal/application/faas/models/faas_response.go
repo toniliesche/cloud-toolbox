@@ -24,8 +24,8 @@ func (r *FaasResponse) GetStatusCode() int {
 }
 
 func (r *FaasResponse) GetBody() interface{} {
-	if _, ok := r.Data["executionId"]; !ok {
-		r.Data["executionId"] = r.ExecutionId
+	if _, ok := r.Data["execution_id"]; !ok {
+		r.Data["execution_id"] = r.ExecutionId
 	}
 
 	return r.Data

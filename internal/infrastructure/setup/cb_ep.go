@@ -15,10 +15,13 @@ package setup
 
 import (
 	"cloud-toolbox/internal/application/ep"
+	"cloud-toolbox/internal/infrastructure/config"
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http"
 	event_publisher "cloud-toolbox/internal/infrastructure/http/event-publisher"
+	"cloud-toolbox/internal/infrastructure/rabbitmq"
+	"cloud-toolbox/internal/infrastructure/rabbitmq/connectors"
 )
 
 func (b *ContainerBuilder) setupEp(container *di.Container) errors.ApplicationError {
@@ -82,7 +85,7 @@ func (b *ContainerBuilder) setupEp(container *di.Container) errors.ApplicationEr
 
 	b.logger.Trace().
 		Msgf("[%s] Registering routes for `EventPublisher` http handler", ContainerBuilderLogIdentifier)
-	if err = container.HttpServer.RegisterRoutes(container.EventPublisherHttpHandler); err != nil {
+	if err = container.HttpServer.RegisterHandler(container.EventPublisherHttpHandler); err != nil {
 		b.logger.Trace().
 			Err(err).
 			Msgf("[%s] Error registering routes for `EventPublisher` http handler", ContainerBuilderLogIdentifier)
@@ -93,4 +96,39 @@ func (b *ContainerBuilder) setupEp(container *di.Container) errors.ApplicationEr
 		Msgf("[%s] `EventPublisher` setup completed", ContainerBuilderLogIdentifier)
 
 	return nil
+}
+
+func (b *ContainerBuilder) setupEpRabbitMQ(container *di.Container) errors.ApplicationError {
+	var err errors.ApplicationError
+
+	b.logger.Trace().
+		Msgf("[%s] Retrieving RabbitMQConfig from `EventPublisher` config", ContainerBuilderLogIdentifier)
+	container.RabbitMQConfig = b.epConfig.RabbitMQ
+
+	if container.RabbitMQConnectionPublisher, err = connectors.NewRabbitMQ(container, config.RabbitMQModePublisher); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `RabbitMQ` connection", ContainerBuilderLogIdentifier)
+		return errors.NewApplicationSetupError("RabbitMQ", err)
+	}
+
+	if container.RabbitMQPublisher, err = rabbitmq.NewPublisher(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `RabbitMQ` publisher", ContainerBuilderLogIdentifier)
+		return errors.NewApplicationSetupError("RabbitMQ", err)
+	}
+
+	if container.EventPublisherBackend, err = ep.NewRabbitMQBackend(container); err != nil {
+		b.logger.Trace().
+			Err(err).
+			Msgf("[%s] Error initializing `RabbitMQ` backend", ContainerBuilderLogIdentifier)
+		return errors.NewApplicationSetupError("RabbitMQ", err)
+	}
+
+	return nil
+}
+
+func NewBuilder() *ContainerBuilder {
+	return &ContainerBuilder{}
 }

@@ -30,6 +30,17 @@ func TestValidateScyllaConfigFailsOnEmptyHost(t *testing.T) {
 	}
 }
 
+func TestValidateScyllaConfigFailsOnInvalidPort(t *testing.T) {
+	t.Parallel()
+	cfg := getValidScyllaConfig()
+	cfg.Port = -1
+
+	err := cfg.Validate("scylla")
+	if assert.Error(t, err, "expected error") {
+		assert.Equal(t, "config value `scylla.port` must be greater than `0`", err.Error())
+	}
+}
+
 func TestValidateScyllaConfigFailsOnEmptyTable(t *testing.T) {
 	t.Parallel()
 	cfg := getValidScyllaConfig()

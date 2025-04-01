@@ -11,13 +11,13 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 
-package models
+package interfaces
 
-import "net/http"
+import (
+	"cloud-toolbox/internal/infrastructure/errors"
+	"github.com/rabbitmq/amqp091-go"
+)
 
-type Route struct {
-	Path    string
-	Methods []string
-	Handler func(http.ResponseWriter, *http.Request)
-	Name    string
+type RabbitMQPublisher interface {
+	Publish(msg amqp091.Publishing, destination string, routingKey string) errors.ApplicationError
 }

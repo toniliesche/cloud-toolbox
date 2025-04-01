@@ -18,6 +18,7 @@ import (
 	"cloud-toolbox/internal/infrastructure/di"
 	"cloud-toolbox/internal/infrastructure/errors"
 	"cloud-toolbox/internal/infrastructure/http/interfaces"
+	"cloud-toolbox/internal/infrastructure/http/shared"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -28,10 +29,11 @@ import (
 const ServerLogIdentifier = "HttpServer"
 
 type Server struct {
-	cfg    *config.HttpServerConfig
-	logger *zerolog.Logger
-	router *mux.Router
-	server *http.Server
+	cfg           *config.HttpServerConfig
+	logger        *zerolog.Logger
+	router        *mux.Router
+	server        *http.Server
+	authenticator interfaces.RequestAuthenticator
 }
 
 func (s *Server) Run() errors.ApplicationError {
@@ -66,9 +68,17 @@ func (s *Server) Shutdown(ctx context.Context) errors.ApplicationError {
 	return nil
 }
 
-func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) errors.ApplicationError {
+func (s *Server) RegisterHandler(handler interfaces.HttpHandler) errors.ApplicationError {
 	if handler == nil {
 		return errors.NewRouteRegisterError(fmt.Errorf("passed HttpHandler is `nil`"))
+	}
+
+	s.logger.Trace().
+		Msgf("[%s] Registering authenticator", ServerLogIdentifier)
+	if s.authenticator = handler.GetAuthenticator(); s.authenticator == nil {
+		s.logger.Trace().
+			Msgf("[%s] No authenticator found, using default", ServerLogIdentifier)
+		s.authenticator = &shared.RequestAuthenticator{}
 	}
 
 	routes := handler.GetRoutes()
@@ -91,7 +101,10 @@ func (s *Server) RegisterRoutes(handler interfaces.HttpHandler) errors.Applicati
 			}
 		}
 
-		r := s.router.HandleFunc(route.Path, route.Handler).Methods(route.Methods...)
+		r := s.router.
+			HandleFunc(route.Path, route.Handler).
+			Methods(route.Methods...).
+			Name(route.Name)
 
 		if err := r.GetError(); err != nil {
 			return errors.NewRouteRegisterError(err)
